@@ -1,94 +1,106 @@
 <?php
-session_set_cookie_params(0, '/auth/');
-session_start();
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../classes/User.php';
+start_session_once();
 
 $error = '';
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
-
-    if (!empty($username) && !empty($password)) {
-        // Check by student_id or email, ensuring role is admin
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE (student_id = ? OR email = ?) AND role = 'admin'");
-        $stmt->execute([$username, $username]);
-        $admin = $stmt->fetch();
-
-        if ($admin && (password_verify($password, $admin['password']) || $password === $admin['password'])) {
-            $_SESSION['user_id'] = $admin['id'];
-            $_SESSION['name'] = $admin['name'];
-            $_SESSION['role'] = 'admin';
-            header("Location: ../admin/dashboard.php");
-            exit;
-        } else {
-            $error = 'Invalid Admin Username or Password.';
-        }
-    } else {
-        $error = 'Please fill in all fields.';
+    $id = trim($_POST['user_id'] ?? '');
+    $pw = $_POST['password'] ?? '';
+    $u  = User::authenticate($id, $pw, 'admin');
+    if ($u) {
+        $_SESSION['user'] = $u;
+        header('Location: ../admin/admin_dashboard.php');
+        exit;
     }
+    $error = 'Invalid credentials.';
 }
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Admin Portal - ACLC College</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            margin: 0;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(rgba(11, 37, 69, 0.85), rgba(11, 37, 69, 0.85)), url('../assets/computer_lab_bg.jpg') center/cover no-repeat;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Technical Equipment Inventory System</title>
+  <link rel="stylesheet" href="../assets/css/admin_login.css">
 </head>
 <body>
 
-    <div style="width: 850px; max-width: 95%; background: white; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); display: flex; overflow: hidden; min-height: 480px;">
-        
-        <!-- Left Side: Branding Panel -->
-        <div style="flex: 1; background: linear-gradient(135deg, #0b2545 0%, #134074 100%); color: white; padding: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-            <img src="../assets/aclc_logo.png" alt="ACLC Logo" style="width: 90px; height: 90px; object-fit: contain; margin-bottom: 20px; background: transparent;">
-            <h1 style="font-size: 26px; font-weight: bold; letter-spacing: 1px; margin: 0 0 5px 0;">ACLC COLLEGE</h1>
-            <p style="font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: #94a3b8; margin: 0 0 25px 0; font-weight: 600;">Mandaue City</p>
-            <div style="width: 120px; height: 2px; background: rgba(255,255,255,0.2); margin-bottom: 25px;"></div>
-            <p style="font-size: 13px; color: #cbd5e1; margin: 0; line-height: 1.5;">Technical Equipment Inventory System</p>
+  <div class="container">
+
+    <div class="left-section">
+      <div class="logo-header">
+        <div class="logo-row">
+          <img src="../assets/images/aclc_logo.png" alt="ACLC Icon" class="logo-icon" />
+          <div class="title-text">
+            <h1>ACLC</h1>
+            <h1>COLLEGE</h1>
+          </div>
         </div>
+        <div class="divider"></div>
+        <div class="location">MANDAUE CITY</div>
+      </div>
 
-        <!-- Right Side: Admin Form Panel -->
-        <div style="flex: 1; padding: 50px 40px; display: flex; flex-direction: column; justify-content: center; background: white;">
-            <h2 style="font-size: 28px; font-weight: bold; color: #1e293b; margin: 0 0 8px 0;">Admin Portal</h2>
-            <p style="font-size: 13px; color: #64748b; margin: 0 0 25px 0;">Custodian & Administrator Access Only</p>
-
-            <?php if (!empty($error)): ?>
-                <div style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 20px;">
-                    <?= htmlspecialchars($error) ?>
-                </div>
-            <?php endif; ?>
-
-            <form method="POST" action="">
-                <div style="margin-bottom: 20px;">
-                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">Admin Username / Email</label>
-                    <input type="text" name="username" required placeholder="Enter username or email" style="width: 100%; padding: 12px 0; border: none; border-bottom: 2px solid #cbd5e1; outline: none; font-size: 14px; color: #1e293b; background: transparent; transition: border-color 0.2s;" onfocus="this.style.borderBottomColor='#134074'" onblur="this.style.borderBottomColor='#cbd5e1'">
-                </div>
-
-                <div style="margin-bottom: 30px;">
-                    <label style="display: block; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; margin-bottom: 6px;">Password</label>
-                    <input type="password" name="password" required placeholder="Enter admin password" style="width: 100%; padding: 12px 0; border: none; border-bottom: 2px solid #cbd5e1; outline: none; font-size: 14px; color: #1e293b; background: transparent; transition: border-color 0.2s;" onfocus="this.style.borderBottomColor='#134074'" onblur="this.style.borderBottomColor='#cbd5e1'">
-                </div>
-
-                <button type="submit" style="width: 100%; background: #134074; color: white; border: none; padding: 14px; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; transition: background 0.2s;" onmouseover="this.style.background='#0b2545'" onmouseout="this.style.background='#134074'">
-                    Admin Login
-                </button>
-            </form>
-        </div>
-
+      <div class="welcome-text">
+        <p>Technical Equipment Inventory System</p>
+      </div>
     </div>
 
+    <div class="right-section">
+      <h2>Admin Portal</h2>
+      <?php if (!empty($error)): ?><div class="alert"><?= e($error) ?></div><?php endif; ?>
+      
+      <form class="login-form" method="POST">
+        
+        <div class="input-group">
+          <label for="user_id">ID No.</label>
+          <input type="text" id="user_id" name="user_id" placeholder="Enter Admin ID" required autofocus
+           value="<?= e($_POST['user_id'] ?? '') ?>">
+        </div>
+
+        <div class="input-group">
+          <label for="password">Password</label>
+          <div class="password-wrapper">
+            <input type="password" id="password" name="password" placeholder="Enter your password" required />
+            <button type="button" id="togglePassword" aria-label="Toggle password visibility">
+              <!-- Default Eye Icon (Hidden State) -->
+              <svg id="eyeIcon" viewBox="0 0 24 24">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="submit">Login</button>
+
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const togglePassword = document.querySelector('#togglePassword');
+    const password = document.querySelector('#password');
+    const eyeIcon = document.querySelector('#eyeIcon');
+
+    togglePassword.addEventListener('click', function () {
+      const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+      password.setAttribute('type', type);
+
+      if (type === 'text') {
+        // Eye Off Icon (Shown State)
+        eyeIcon.innerHTML = `
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+        `;
+      } else {
+        // Eye Icon (Hidden State)
+        eyeIcon.innerHTML = `
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
+        `;
+      }
+    });
+  </script>
 </body>
 </html>

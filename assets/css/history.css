@@ -1,0 +1,159 @@
+/* History Card Container */
+.card.hist-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  border: 1.5px solid var(--ink);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.hist-card h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.hist-card .card-head { 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap; 
+  gap: 12px;
+}
+
+.hist-controls { 
+  display: flex; 
+  gap: 10px; 
+  align-items: center; 
+}
+
+.btn-export {
+  padding: 10px 20px; 
+  background: #17b984; 
+  color: #fff; 
+  border-radius: 30px;
+  font-weight: 700; 
+  text-decoration: none; 
+  transition: transform .15s, background .2s;
+}
+.btn-export:hover { 
+  transform: translateY(-2px); 
+  background: #12a273; 
+}
+
+/* Responsive Table Wrapper */
+.table-wrap {
+  width: 100%;
+  max-height: 65vh; 
+  overflow: auto;
+}
+
+/* Data Table Styling */
+.data-table.hist {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.data-table.hist th,
+.data-table.hist td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top; 
+}
+
+.data-table.hist th {
+  background: #f8f9fc;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.data-table.hist tr:hover td {
+  background: #f6f7ff;
+}
+
+.data-table.hist td small { 
+  color: var(--muted); 
+}
+
+.data-table.hist td a { 
+  color: var(--blue-800); 
+  text-decoration: none; 
+}
+
+/* Status Badges */
+.status {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.status.pending { background: #fef3c7; color: #b45309; }
+.status.approved { background: #d1fae5; color: #065f46; }
+.status.returned { background: #e0e7ff; color: #3730a3; }
+.status.rejected, .status.lost { background: #fee2e2; color: #991b1b; }
+
+/* Cancel Button */
+.btn-cancel {
+  display: inline-block; 
+  padding: 6px 14px; 
+  border-radius: 20px;
+  background: #dc2626; 
+  color: #fff !important; 
+  font-weight: 700; 
+  font-size: 12px;
+  text-decoration: none; 
+  transition: transform .15s;
+}
+
+.btn-cancel:hover { 
+  transform: scale(1.05); 
+}
+
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 30px;
+}
+/* Styled Back & Logout Buttons */
+.back-btn, .logout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.back-btn {
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.back-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.logout-btn {
+  color: #fff;
+  background: #e53935;
+  border: 1px solid transparent;
+}
+
+.logout-btn:hover {
+  background: #c62828;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(229, 57, 53, 0.3);
+}

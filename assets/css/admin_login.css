@@ -1,0 +1,6 @@
+@import url('student_login.css');
+.login-bg.admin {
+  background:
+    linear-gradient(135deg, rgba(24,25,140,.75), rgba(11,12,80,.9)),
+    url('../images/aclc_college_cover.jpg') center/cover no-repeat;
+}

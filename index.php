@@ -1,62 +1,42 @@
 <?php
-// index.php
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require_once __DIR__ . '/config/database.php';
+start_session_once();
+
+// If a user is already logged in, respect their role redirect
+if (!empty($_SESSION['user'])) {
+    $role = $_SESSION['user']['role'];
+    header('Location: ' . ($role === 'admin' ? 'admin/admin_dashboard.php' : 'student/student_dashboard.php'));
+    exit;
+}
+
+// Automatically redirect everyone else straight to the student portal
+header('Location: auth/student_login.php');
+exit;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ACLC Student Portal Login</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+<meta charset="UTF-8">
+<title>ACLC College — Technical Inventory</title>
+<link rel="stylesheet" href="assets/css/landing.css">
 </head>
-<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+<body>
+<div class="landing" style="display:none;">
+  <!-- Hidden backup elements -->
+</div>
 
-    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 border border-slate-100">
-        
-        <!-- Header -->
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-indigo-950">Student Portal</h1>
-            <p class="text-sm text-slate-500 mt-1">Sign in to request and borrow equipment</p>
-        </div>
-
-        <!-- Student Login Form -->
-        <form action="auth/login.php" method="POST" class="space-y-4">
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Student ID / Email</label>
-                <input type="text" name="username" required placeholder="Enter your student ID" 
-                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 outline-none focus:border-indigo-600 focus:bg-white transition-all">
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Password</label>
-                <input type="password" name="password" required placeholder="••••••••" 
-                    class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 outline-none focus:border-indigo-600 focus:bg-white transition-all">
-            </div>
-
-            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-lg shadow-md transition-all duration-200 cursor-pointer text-sm mt-2">
-                Sign In
-            </button>
-        </form>
-
-        <!-- Subtle Helper Note -->
-        <div class="mt-6 text-center border-t border-slate-100 pt-4">
-            <p class="text-[11px] text-slate-400">
-                Authorized ACLC Personnel? Press <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-600 font-mono">Ctrl</kbd> + <kbd class="px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded text-slate-600 font-mono">A</kbd> to open Admin login.
-            </p>
-        </div>
-
-    </div>
-
-    <!-- Script to handle Ctrl + A shortcut -->
-    <script>
-        document.addEventListener('keydown', function(event) {
-            if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-                event.preventDefault(); // Prevent standard browser "Select All"
-                window.location.href = 'auth/admin_login.php'; // Redirect to Admin Login page
-            }
-        });
-    </script>
+<script>
+  // Listen for the 'A' or 'a' key (ensuring user isn't typing in an input field if any exist)
+  document.addEventListener('keydown', function(event) {
+    if (event.key === 'a' || event.key === 'A') {
+      // Prevent redirection if they are typing 'a' into a form field
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+        return;
+      }
+      event.preventDefault();
+      window.location.href = 'auth/admin_login.php';
+    }
+  });
+</script>
 </body>
 </html>
