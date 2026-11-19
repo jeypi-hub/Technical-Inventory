@@ -8,6 +8,7 @@ $user = User::requireLogin('student');
 
 $search = trim($_GET['q'] ?? '');
 $items  = Equipment::all($search ?: null);
+$availableCounts = Equipment::availableCountsByName();
 $notifs = Notification::forUser((int)$user['id'], 10);
 $unread = Notification::unreadCount((int)$user['id']);
 $flash = $_GET['flash'] ?? '';
@@ -16,6 +17,7 @@ $flash = $_GET['flash'] ?? '';
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Student Dashboard — ACLC</title>
 <link rel="stylesheet" href="../assets/css/student_dashboard.css">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
@@ -30,6 +32,20 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </div>
   <div class="stud-right">
+    <button type="button" class="cart-btn" id="openBorrowCart" aria-label="Open borrow request" title="Borrow request">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 3h8l4 4v14H7z"></path>
+        <path d="M15 3v5h5M10 13h6M10 17h6"></path>
+        <path d="M3 7v14h4"></path>
+      </svg>
+      <span class="cart-count" id="borrowCartCount" hidden>0</span>
+    </button>
+    <button type="button" class="scanner-btn" id="openHeaderScanner" aria-label="Scan QR code" title="Scan QR code">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"></path>
+        <path d="M8 8h3v3H8zM15 8v3M15 15h1M19 15v4M8 15h3v3H8z"></path>
+      </svg>
+    </button>
     <div class="notif">
       <button class="notif-btn" onclick="toggleNotif()">
         <!-- Bell Icon -->
@@ -93,33 +109,26 @@ $flash = $_GET['flash'] ?? '';
 
   <section class="equip-grid">
     <?php foreach ($items as $it):
-      $isAvailable = $it['status'] === 'available'; ?>
-      <article class="equip-card <?= $isAvailable ? '' : 'unavailable' ?>">
-        <div class="equip-img">
+      $isAvailable = $it['status'] === 'available';
+      $availableCount = $availableCounts[$it['name']] ?? 0; ?>
+      <article class="equip-card <?= $isAvailable ? '' : 'unavailable' ?>"
+        data-search="<?= e($it['name'] . ' ' . $it['serial_number']) ?>">
+        <button type="button" class="equip-img item-open"
+          data-id="<?= (int)$it['id'] ?>"
+          data-name="<?= e($it['name']) ?>"
+          data-image="<?= !empty($it['image']) ? e('../assets/upload/' . $it['image']) : '' ?>"
+          data-status="<?= e($it['status']) ?>"
+          data-available="<?= $availableCount ?>"
+          aria-label="View <?= e($it['name']) ?> details">
           <?php if (!empty($it['image'])): ?>
             <img src="../assets/upload/<?= e($it['image']) ?>" alt="">
           <?php else: ?>
             <div class="placeholder"></div>
           <?php endif; ?>
-        </div>
-        <?php if ($isAvailable): ?>
-          <h3><?= e($it['name']) ?></h3>
-          <p class="serial">Serial: <?= e($it['serial_number']) ?></p>
-          <span class="pill available">Available</span>
-          <form method="post" action="actions.php" class="req-form">
-            <input type="hidden" name="do" value="request">
-            <input type="hidden" name="equipment_id" value="<?= (int)$it['id'] ?>">
-            <input type="text" name="purpose"   placeholder="Purpose (e.g. Lab Work)" required>
-            <input type="text" name="classroom" placeholder="Classroom (e.g. Lab 5)" required>
-            <input type="text" name="teacher"   placeholder="Teacher's Name" required>
-            <button type="submit" class="btn-primary">Request Item</button>
-          </form>
-        <?php else: ?>
-          <div class="unavail-space"></div>
-          <h3><?= e($it['name']) ?></h3>
-          <p class="serial">Serial: <?= e($it['serial_number']) ?></p>
-          <span class="pill borrowed">Borrowed</span>
-        <?php endif; ?>
+          <span class="image-stock"><?= $availableCount ?> available</span>
+          <span class="image-name"><?= e($it['name']) ?></span>
+          <span class="image-hint">Click to view</span>
+        </button>
       </article>
     <?php endforeach; ?>
     <?php if (empty($items)): ?>
@@ -127,6 +136,89 @@ $flash = $_GET['flash'] ?? '';
     <?php endif; ?>
   </section>
 </main>
+
+<dialog class="item-dialog" id="itemDialog" aria-labelledby="detailName">
+  <div class="item-dialog-panel">
+    <button type="button" class="dialog-close" aria-label="Close item details">&times;</button>
+    <div class="modal-bento">
+      <div class="detail-image-tile" id="detailImageTile">
+        <img id="detailImage" alt="">
+        <span class="detail-stock" id="detailStock"></span>
+        <h2 id="detailName"></h2>
+      </div>
+      <div class="detail-side">
+        <div class="detail-stat-tile">
+          <span class="detail-label">Inventory status</span>
+          <strong id="detailStatus"></strong>
+        </div>
+        <div class="request-tile" id="requestTile" hidden>
+          <h3>Add this item</h3>
+          <div class="modal-req-form">
+            <input type="number" name="quantity" id="requestQuantity" aria-label="Quantity"
+              placeholder="Quantity" min="1" value="1" required>
+            <button type="button" class="btn-primary" id="addItemToCart">Add to Request</button>
+          </div>
+        </div>
+        <div class="request-tile unavailable-tile" id="unavailableTile" hidden>
+          <strong>This item is currently unavailable.</strong>
+          <span>Check back later to request it.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="item-dialog cart-dialog" id="borrowCartDialog" aria-labelledby="borrowCartTitle">
+  <div class="item-dialog-panel">
+    <button type="button" class="dialog-close" id="closeBorrowCart" aria-label="Close borrow request">&times;</button>
+    <div class="cart-content">
+      <h2 id="borrowCartTitle">Borrow Request</h2>
+      <p class="cart-intro">Review your items and submit them together.</p>
+      <p class="borrow-cart-empty" id="borrowCartEmpty">No items selected. Add equipment to this request.</p>
+      <ul class="borrow-cart-items" id="borrowCartItems"></ul>
+      <form method="post" action="actions.php" class="cart-req-form" id="borrowCartForm">
+        <input type="hidden" name="do" value="cart_request">
+        <div id="borrowCartHiddenItems"></div>
+        <label>
+          Purpose
+          <input type="text" name="purpose" placeholder="e.g. Lab Work" required>
+        </label>
+        <label>
+          Classroom
+          <input type="text" name="classroom" placeholder="e.g. Lab 5" required>
+        </label>
+        <div class="teacher-autocomplete">
+          <label for="borrowCartTeacher">Teacher's Name</label>
+          <input type="text" id="borrowCartTeacher" name="teacher" placeholder="Teacher's Name"
+            aria-autocomplete="list" aria-controls="cartTeacherSuggestions" aria-expanded="false" required>
+          <div class="teacher-suggestions" id="cartTeacherSuggestions" role="listbox" hidden></div>
+        </div>
+        <p class="cart-status" id="borrowCartStatus" role="status" aria-live="polite"></p>
+        <button type="submit" class="btn-primary" id="submitBorrowCart" disabled>Submit Borrow Request</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+<dialog class="item-dialog scanner-dialog" id="headerScannerDialog" aria-labelledby="headerScannerTitle">
+  <div class="item-dialog-panel">
+    <button type="button" class="dialog-close" id="closeHeaderScanner" aria-label="Close QR scanner">&times;</button>
+    <div class="scanner-dialog-content">
+      <h2 id="headerScannerTitle">Scan QR code</h2>
+      <p>Point your camera at an item's QR code to read its serial number.</p>
+      <div class="qr-camera-frame">
+        <video id="headerScannerVideo" autoplay muted playsinline></video>
+        <div class="qr-scan-guide" aria-hidden="true"></div>
+      </div>
+      <p class="qr-scanner-status" id="headerScannerStatus" role="status" aria-live="polite"></p>
+      <div class="scanner-result" id="headerScannerResult" hidden>
+        <span>Serial number</span>
+        <strong id="headerScannerSerial"></strong>
+      </div>
+      <button type="button" class="btn-primary qr-retry" id="retryHeaderScanner" hidden>Try camera again</button>
+    </div>
+  </div>
+</dialog>
 <script src="../assets/js/student.js"></script>
 </body>
 </html>

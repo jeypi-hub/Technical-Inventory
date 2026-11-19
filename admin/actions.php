@@ -65,7 +65,7 @@ switch ($do) {
         echo "\xEF\xBB\xBF"; // UTF-8 BOM
         echo "<table border='1'><tr>
           <th>ID</th><th>Date &amp; Time</th><th>Student</th><th>Student ID</th><th>Course</th>
-          <th>Equipment</th><th>Serial No.</th><th>Classroom</th><th>Teacher</th><th>Purpose</th><th>Status</th>
+          <th>Equipment</th><th>Serial No.</th><th>Quantity</th><th>Classroom</th><th>Teacher</th><th>Purpose</th><th>Status</th>
         </tr>";
         foreach ($rows as $r) {
             $dt = $r['returned_at'] ?: $r['approved_at'] ?: $r['requested_at'];
@@ -77,6 +77,7 @@ switch ($do) {
             echo '<td>' . e($r['course']) . '</td>';
             echo '<td>' . e($r['equipment_name']) . '</td>';
             echo '<td>' . e($r['serial_number']) . '</td>';
+            echo '<td>' . (int)($r['quantity'] ?? 1) . '</td>';
             echo '<td>' . e($r['classroom']) . '</td>';
             echo '<td>' . e($r['teacher']) . '</td>';
             echo '<td>' . e($r['purpose']) . '</td>';

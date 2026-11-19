@@ -42,7 +42,7 @@ $pageTitle = 'History';
           <thead>
             <tr>
               <th>ID</th><th>Date &amp; Time</th><th>Student / ID / Course</th>
-              <th>Equipment &amp; Serial No.</th><th>Classroom</th><th>Teacher</th>
+              <th>Equipment &amp; Serial No.</th><th>Quantity</th><th>Classroom</th><th>Teacher</th>
               <th>Purpose</th><th>Status</th>
             </tr>
           </thead>
@@ -58,6 +58,7 @@ $pageTitle = 'History';
                 <small>(<?= e($r['student_uid']) ?>)</small>
               </td>
               <td><?= e($r['equipment_name']) ?> [<?= e($r['serial_number']) ?>]</td>
+              <td><?= (int)($r['quantity'] ?? 1) ?></td>
               <td><?= e($r['classroom']) ?></td>
               <td><?= e($r['teacher']) ?></td>
               <td><?= e($r['purpose']) ?></td>
@@ -65,7 +66,7 @@ $pageTitle = 'History';
             </tr>
           <?php endforeach; ?>
           <?php if (empty($rows)): ?>
-            <tr><td colspan="8" class="empty">No history yet.</td></tr>
+            <tr><td colspan="9" class="empty">No history yet.</td></tr>
           <?php endif; ?>
           </tbody>
         </table>

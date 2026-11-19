@@ -50,6 +50,7 @@ CREATE TABLE `borrow_requests` (
   `purpose`      VARCHAR(160) NOT NULL,
   `classroom`    VARCHAR(80)  NOT NULL,
   `teacher`      VARCHAR(120) NOT NULL,
+  `quantity`     INT NOT NULL DEFAULT 1,
   `status`       ENUM('pending','approved','rejected','returned','lost','broken') NOT NULL DEFAULT 'pending',
   `requested_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `approved_at`  DATETIME DEFAULT NULL,

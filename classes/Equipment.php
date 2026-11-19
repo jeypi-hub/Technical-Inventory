@@ -28,6 +28,21 @@ class Equipment
         return $stmt->fetchAll();
     }
 
+    public static function availableCountsByName(): array
+    {
+        $rows = db()->query(
+            "SELECT name, COUNT(*) AS available_count
+             FROM equipment
+             WHERE status = 'available'
+             GROUP BY name"
+        )->fetchAll();
+        $counts = [];
+        foreach ($rows as $row) {
+            $counts[$row['name']] = (int) $row['available_count'];
+        }
+        return $counts;
+    }
+
     public static function find(int $id): ?array
     {
         $stmt = db()->prepare('SELECT * FROM equipment WHERE id = ?');
@@ -55,6 +70,55 @@ class Equipment
     {
         $stmt = db()->prepare('UPDATE equipment SET status = ? WHERE id = ?');
         $stmt->execute([$status, $id]);
+    }
+
+    public static function setStatusByNameQuantity(int $equipmentId, int $quantity, string $status): bool
+    {
+        $equipment = self::find($equipmentId);
+        if (!$equipment || $quantity < 1) return false;
+
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT id FROM equipment WHERE name = ? AND status = 'available' ORDER BY id LIMIT " . (int)$quantity . " FOR UPDATE"
+            );
+            $stmt->execute([$equipment['name']]);
+            $rows = $stmt->fetchAll();
+            if (count($rows) < $quantity) {
+                $pdo->rollBack();
+                return false;
+            }
+
+            $ids = array_column($rows, 'id');
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $update = $pdo->prepare("UPDATE equipment SET status = ? WHERE id IN ($placeholders)");
+            $update->execute(array_merge([$status], $ids));
+            $pdo->commit();
+            return true;
+        } catch (\Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    public static function setStatusForBorrowedQuantity(int $equipmentId, int $quantity, string $status): void
+    {
+        $equipment = self::find($equipmentId);
+        if (!$equipment || $quantity < 1) return;
+
+        $pdo = db();
+        $stmt = $pdo->prepare(
+            "SELECT id FROM equipment WHERE name = ? AND status = 'borrowed' ORDER BY id LIMIT " . (int)$quantity
+        );
+        $stmt->execute([$equipment['name']]);
+        $rows = $stmt->fetchAll();
+        $ids = array_column($rows, 'id');
+        if (!$ids) return;
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $pdo->prepare("UPDATE equipment SET status = ? WHERE id IN ($placeholders)")
+            ->execute(array_merge([$status], $ids));
     }
 
     public static function counts(): array

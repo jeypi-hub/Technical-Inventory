@@ -1,5 +1,5 @@
 -- =============================================================
---  Migration v2 — adds email column + student cancel feature
+-- Migration v2 — adds email column + student cancel feature
 --  Run this ONLY if you already imported v1 of technical_inventory.sql
 --  (fresh installs of technical_inventory.sql already include these)
 -- =============================================================
