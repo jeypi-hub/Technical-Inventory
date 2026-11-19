@@ -20,6 +20,9 @@ switch ($do) {
             count($equipmentIds) === 0 || count($equipmentIds) !== count($quantities)) {
             header('Location: student_dashboard.php?flash=' . urlencode('Add items and complete all request details')); exit;
         }
+        if (preg_match('/[0-9]/', $purpose) || preg_match('/[0-9]/', $teacher)) {
+            header('Location: student_dashboard.php?flash=' . urlencode('Numbers are not allowed in purpose or teacher name')); exit;
+        }
 
         $requestedItems = [];
         foreach (array_values($equipmentIds) as $index => $equipmentId) {
@@ -76,6 +79,9 @@ switch ($do) {
         $quantity   = (int)($_POST['quantity'] ?? 0);
         if (!$equipId || !$purpose || !$classroom || !$teacher || $quantity < 1) {
             header('Location: student_dashboard.php?flash=All fields are required'); exit;
+        }
+        if (preg_match('/[0-9]/', $purpose) || preg_match('/[0-9]/', $teacher)) {
+            header('Location: student_dashboard.php?flash=' . urlencode('Numbers are not allowed in purpose or teacher name')); exit;
         }
         $equipment = Equipment::find($equipId);
         if (!$equipment || $equipment['status'] !== 'available') {

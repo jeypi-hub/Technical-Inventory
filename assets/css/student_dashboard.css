@@ -404,6 +404,8 @@ html, body {
 .cart-req-form > label, .cart-req-form > .teacher-autocomplete { display: grid; gap: 6px; color: var(--muted); font-size: 12px; font-weight: 600; }
 .cart-req-form input { width: 100%; min-height: 40px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); font: inherit; font-weight: 400; }
 .cart-req-form input:focus { outline: none; border-color: var(--blue-800); }
+.cart-status { margin: 0; color: var(--danger); font-size: 12px; }
+.cart-status:empty { display: none; }
 .cart-req-form > .btn-primary { min-height: 42px; }
 .cart-req-form > .btn-primary:disabled { opacity: .55; cursor: not-allowed; transform: none; }
 @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }

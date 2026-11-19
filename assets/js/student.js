@@ -43,6 +43,77 @@ if (searchForm) {
 }
 
 const teacherInput = document.getElementById('borrowCartTeacher');
+const purposeInput = document.getElementById('borrowCartPurpose');
+const cartRequestForm = document.getElementById('borrowCartForm');
+const cartStatus = document.getElementById('borrowCartStatus');
+const hasDigits = (value) => /[0-9]/.test(value);
+const showNumericInputMessage = (label) => {
+  cartStatus.textContent = `Numbers are not allowed in ${label}.`;
+};
+
+if (cartRequestForm && cartStatus) {
+  const restrictedInputs = [
+    { input: purposeInput, label: 'Purpose' },
+    { input: teacherInput, label: "Teacher's Name" }
+  ].filter(({ input }) => input);
+
+  restrictedInputs.forEach(({ input, label }) => {
+    input.addEventListener('keydown', (event) => {
+      if (/^[0-9]$/.test(event.key)) {
+        event.preventDefault();
+        showNumericInputMessage(label);
+      }
+    });
+
+    input.addEventListener('beforeinput', (event) => {
+      if (event.data && hasDigits(event.data)) {
+        event.preventDefault();
+        showNumericInputMessage(label);
+      }
+    });
+
+    input.addEventListener('paste', (event) => {
+      const pastedText = event.clipboardData?.getData('text') || '';
+      if (!hasDigits(pastedText)) return;
+
+      event.preventDefault();
+      input.setRangeText(
+        pastedText.replace(/[0-9]/g, ''),
+        input.selectionStart,
+        input.selectionEnd,
+        'end'
+      );
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      showNumericInputMessage(label);
+    });
+
+    input.addEventListener('input', () => {
+      const originalValue = input.value;
+      const caret = input.selectionStart;
+      const filteredValue = originalValue.replace(/[0-9]/g, '');
+
+      if (originalValue !== filteredValue) {
+        const digitsBeforeCaret = (originalValue.slice(0, caret).match(/[0-9]/g) || []).length;
+        input.value = filteredValue;
+        const nextCaret = Math.max(0, caret - digitsBeforeCaret);
+        input.setSelectionRange(nextCaret, nextCaret);
+        showNumericInputMessage(label);
+      } else {
+        cartStatus.textContent = '';
+      }
+    });
+  });
+
+  cartRequestForm.addEventListener('submit', (event) => {
+    const invalidInput = restrictedInputs.find(({ input }) => hasDigits(input.value));
+    if (!invalidInput) return;
+
+    event.preventDefault();
+    showNumericInputMessage(invalidInput.label);
+    invalidInput.input.reportValidity();
+  });
+}
+
 if (teacherInput) {
   const suggestionList = document.getElementById('cartTeacherSuggestions');
   const teacherNames = [
