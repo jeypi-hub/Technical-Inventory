@@ -1,15 +1,11 @@
 <?php
-/**
- * Database connection (PDO / MySQL).
- * Edit the credentials below to match your XAMPP setup.
- */
 
 class Database
 {
     private string $host    = 'localhost';
     private string $db_name = 'technical_inventory';
     private string $user    = 'root';
-    private string $pass    = '';           // default XAMPP password is empty
+    private string $pass    = '';        
     private string $charset = 'utf8mb4';
 
     public ?PDO $conn = null;
@@ -34,7 +30,6 @@ class Database
     }
 }
 
-/** Shared helpers */
 function db(): PDO
 {
     static $pdo = null;

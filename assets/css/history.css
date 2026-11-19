@@ -1,4 +1,4 @@
-/* History Card Container */
+
 .card.hist-card {
   background: #fff;
   border-radius: 16px;
@@ -43,14 +43,12 @@
   background: #12a273; 
 }
 
-/* Responsive Table Wrapper */
 .table-wrap {
   width: 100%;
   max-height: 65vh; 
   overflow: auto;
 }
 
-/* Data Table Styling */
 .data-table.hist {
   width: 100%;
   border-collapse: collapse;
@@ -85,7 +83,6 @@
   text-decoration: none; 
 }
 
-/* Status Badges */
 .status {
   display: inline-block;
   padding: 3px 10px;
@@ -100,7 +97,6 @@
 .status.returned { background: #e0e7ff; color: #3730a3; }
 .status.rejected, .status.lost { background: #fee2e2; color: #991b1b; }
 
-/* Cancel Button */
 .btn-cancel {
   display: inline-block; 
   padding: 6px 14px; 
@@ -122,7 +118,6 @@
   color: var(--muted);
   padding: 30px;
 }
-/* Styled Back & Logout Buttons */
 .back-btn, .logout-btn {
   display: inline-flex;
   align-items: center;

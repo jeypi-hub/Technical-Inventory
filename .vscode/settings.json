@@ -1,0 +1,5 @@
+{
+    "devin.defaultModel": "claude-opus-5-5-low",
+    "devin.defaultThoughtLevel": "low",
+    "devin.defaultSpeed": "standard"
+}

@@ -75,7 +75,6 @@ $pageTitle= 'Home';
           <?php endforeach; endif; ?>
         </div>
 
-        <!-- Pending Requests -->
         <?php $pendReqs = BorrowRequest::pending(); ?>
         <?php if (!empty($pendReqs)): ?>
         <h2 style="margin-top:22px">Pending Requests</h2>
@@ -97,7 +96,6 @@ $pageTitle= 'Home';
         <?php endif; ?>
       </div>
 
-<!-- Return condition modal -->
 <div class="modal-backdrop" id="returnModal">
   <div class="modal">
     <h3>Inspect Returned Item</h3>

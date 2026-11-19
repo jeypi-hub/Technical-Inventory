@@ -136,7 +136,6 @@ html, body {
 .searchbar.wide input { border: 0; outline: none; padding: 4px; width: 100%; font-size: 13px; background: transparent; }
 .searchbar.wide button { background: transparent; border: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
 
-/* Responsive Equipment Grid */
 .equip-grid { 
   display: grid; 
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); 
@@ -225,7 +224,6 @@ html, body {
   stroke-width: 2;
 }
 
-/* Media Queries for True Responsiveness */
 @media (max-width: 768px) {
   .stud-topbar {
     padding: 10px 16px;
@@ -242,7 +240,7 @@ html, body {
 }
 
 @media (max-width: 480px) {
-  .stud-brand span { display: none; } /* Hide sub-text on very small screens if needed */
-  .profile-info { display: none; } /* Hide profile text name on tiny mobile screens to save space */
+  .stud-brand span { display: none; } 
+  .profile-info { display: none; } 
   .profile { padding: 4px; }
 }

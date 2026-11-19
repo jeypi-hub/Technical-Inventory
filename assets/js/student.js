@@ -11,7 +11,6 @@ document.addEventListener('click', (e) => {
   if (!e.target.closest('.profile')) document.getElementById('profilePanel')?.classList.remove('show');
 });
 
-// stagger entrance for equipment cards
 document.querySelectorAll('.equip-card').forEach((c, i) => {
   c.style.animationDelay = (i * 60) + 'ms';
 });

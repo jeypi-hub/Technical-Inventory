@@ -15,7 +15,6 @@ class BorrowRequest
         $stmt->execute([$userId, $equipmentId, $purpose, $classroom, $teacher]);
         $reqId = (int) db()->lastInsertId();
 
-        // Notify all admins
         $admins = db()->query("SELECT id FROM users WHERE role = 'admin'")->fetchAll();
         foreach ($admins as $a) {
             Notification::push((int)$a['id'], 'request',
@@ -106,7 +105,6 @@ class BorrowRequest
         Mailer::notifyDecision((int)$req['user_id'], 'rejected', $req);
     }
 
-    /** Student-initiated cancel — only allowed while status is still 'pending'. */
     public static function cancel(int $id, int $userId): bool
     {
         $stmt = db()->prepare(
@@ -116,7 +114,6 @@ class BorrowRequest
         return $stmt->rowCount() > 0;
     }
 
-    /** condition: good | damaged | lost */
     public static function markReturn(int $id, string $condition): void
     {
         $req = self::find($id);
@@ -150,7 +147,6 @@ class BorrowRequest
         return $stmt->fetch() ?: null;
     }
 
-    /** Monthly borrowed vs returned counts for a given year */
     public static function monthlyActivity(int $year): array
     {
         $stmt = db()->prepare(
