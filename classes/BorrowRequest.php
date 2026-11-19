@@ -16,9 +16,12 @@ class BorrowRequest
         $stmt->execute([$userId, $equipmentId, $purpose, $classroom, $teacher, $quantity]);
         $reqId = (int) db()->lastInsertId();
 
-        $admins = db()->query("SELECT id FROM users WHERE role = 'admin'")->fetchAll();
-        foreach ($admins as $a) {
-            Notification::push((int)$a['id'], 'request',
+        // Notify all administrators and staff
+        $managementUsers = db()->query(
+            "SELECT id FROM users WHERE role IN ('admin', 'staff')"
+        )->fetchAll();
+        foreach ($managementUsers as $managementUser) {
+            Notification::push((int)$managementUser['id'], 'request',
                 "New borrow request submitted for {$quantity} item(s) (Request #{$reqId})", $reqId);
         }
         return $reqId;

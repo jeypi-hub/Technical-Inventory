@@ -4,18 +4,32 @@ require_once __DIR__ . '/../classes/User.php';
 start_session_once();
 
 $error = '';
+if (!empty($_SESSION['user'])) {
+    $destination = $_SESSION['user']['role'] === 'student'
+        ? '../student/student_dashboard.php'
+        : '../admin/admin_dashboard.php';
+    header('Location: ' . $destination);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id  = trim($_POST['user_id'] ?? '');
-    $pw  =$_POST['password'] ?? '';
-    if (!User::isValidStudentId($id)) {$error = 'Invalid ID format. Use C##-##-####-MAN### (e.g. C24-01-1524-MAN121)';
+    $pw = $_POST['password'] ?? '';
+    $account = User::findByUserId($id);
+    if ($account && $account['role'] === 'student' && !User::isValidStudentId($id)) {
+        $error = 'Invalid student ID format. Use C##-##-####-MAN###.';
     } else {
-        $u = User::authenticate($id,$pw, 'student');
-        if ($u) {
-            $_SESSION['user'] =$u;
-            header('Location: ../student/student_dashboard.php');
+        $u = User::authenticateStudentOrStaff($id, $pw);
+        if (!$u) {
+            $error = 'Invalid ID or password.';
+        } else {
+            $_SESSION['user'] = $u;
+            $destination = $u['role'] === 'staff'
+                ? '../admin/admin_dashboard.php'
+                : '../student/student_dashboard.php';
+            header('Location: ' . $destination);
             exit;
         }
-        $error = 'Invalid ID or password.';
     }
 }
 ?>
@@ -50,14 +64,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="right-section">
-      <h2>Student Portal</h2>
+      <h2>Student &amp; Staff Portal</h2>
       <?php if (!empty($error)): ?><div class="alert"><?= e($error) ?></div><?php endif; ?>
       
       <form class="login-form" method="POST">
         
         <div class="input-group">
           <label for="user_id">ID No.</label>
-          <input type="text" id="user_id" name="user_id" placeholder="Enter your ID number" required autofocus
+          <input type="text" id="user_id" name="user_id" placeholder="Enter your student or staff ID" required autofocus
            value="<?= e($_POST['user_id'] ?? '') ?>">
         </div>
 

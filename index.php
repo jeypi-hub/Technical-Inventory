@@ -4,7 +4,10 @@ start_session_once();
 
 if (!empty($_SESSION['user'])) {
     $role = $_SESSION['user']['role'];
-    header('Location: ' . ($role === 'admin' ? 'admin/admin_dashboard.php' : 'student/student_dashboard.php'));
+    $destination = $role === 'student'
+        ? 'student/student_dashboard.php'
+        : 'admin/admin_dashboard.php';
+    header('Location: ' . $destination);
     exit;
 }
 
