@@ -26,12 +26,13 @@ Technical_Inventory/
 ├── auth/
 │   ├── admin_login.php   / admin_logout.php
 │   └── student_login.php / student_logout.php
+├── settings.php / settings_action.php
 ├── assets/
 │   ├── upload/           (equipment images)
 │   ├── images/logo.svg
 │   ├── css/  (admin_dashboard, manage_equipment, history, student_dashboard, admin_login, student_login, landing)
 │   └── js/   (admin.js, student.js, charts.js)
-├── database/technical_inventory.sql
+├── database/ (schema and incremental migrations)
 └── index.php
 ```
 
@@ -47,6 +48,10 @@ Technical_Inventory/
 
 If your MySQL user/password differ from XAMPP defaults, edit `config/database.php`.
 For an existing installation, run `database/migration_v4.sql` in phpMyAdmin to add staff role support and the demo staff account.
+
+### Updating an existing database
+
+After pulling updates, import each migration you have not already applied, in version order. If your database predates staff support, apply `database/migration_v4.sql` first. If the `language`, `dark_mode`, and `compact_mode` columns are not already present, apply `database/migration_v5.sql` to add them. Apply `database/migration_v6.sql` to add audit-log storage. Fresh installs include these fields and the audit table from `database/technical_inventory.sql`.
 
 ## 📲 Install as an app (PWA)
 
@@ -79,6 +84,9 @@ The demo password is `password123` for all listed accounts. Students and staff s
 - Notifications (approved / rejected / return)
 - **Email alerts** on approve / reject (see mail setup below)
 - Personal borrow history
+- Account settings: English, Tagalog, or Bisaya; dark mode; compact mode; and password change
+- Fixed Admin, Staff, and Student permissions; Admin can assign roles
+- Admin-only audit trail for sign-ins, inventory/checkouts, role changes, and account settings
 
 **Admin and Staff**
 - Admins use the Admin Portal; staff and students share the Student & Staff Portal
@@ -92,6 +100,10 @@ The demo password is `password123` for all listed accounts. Students and staff s
 - History Log with search + **Excel export**
 - Hover-expand sidebar
 - Notification bell with unread dot
+
+Settings are saved per account. Password changes require the current password and a new password of at least eight characters.
+
+Access uses fixed permissions: Admin manages roles and audit records; Staff handles equipment, checkouts, and borrowing history; Students can submit requests and view their own history. Audit events cover authentication, inventory/checkouts, role assignments, and account settings. Clearing the audit trail is Admin-only and records a clearing event.
 
 ## 🔧 Notes / Conventions
 

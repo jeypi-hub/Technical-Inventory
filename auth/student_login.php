@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
+require_once __DIR__ . '/../classes/AuditLog.php';
 start_session_once();
 
 $error = '';
@@ -17,12 +18,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pw = $_POST['password'] ?? '';
     $account = User::findByUserId($id);
     if ($account && $account['role'] === 'student' && !User::isValidStudentId($id)) {
+        AuditLog::record('auth.login.failed', 'user', null, [
+            'attempted_user_id' => $id,
+            'reason' => 'invalid_student_id',
+        ]);
         $error = 'Invalid student ID format. Use C##-##-####-MAN###.';
     } else {
         $u = User::authenticateStudentOrStaff($id, $pw);
         if (!$u) {
+            AuditLog::record('auth.login.failed', 'user', null, ['attempted_user_id' => $id]);
             $error = 'Invalid ID or password.';
         } else {
+            AuditLog::record('auth.login.success', 'user', (string)$u['id'], [], $u);
             $_SESSION['user'] = $u;
             $destination = $u['role'] === 'staff'
                 ? '../admin/admin_dashboard.php'

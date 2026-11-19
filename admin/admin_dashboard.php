@@ -3,7 +3,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/Equipment.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
-$user = User::requireStaffOrAdmin();
+$user = User::requirePermission('checkout.manage');
 
 $counts   = Equipment::counts();
 $pending  = BorrowRequest::countPending();
@@ -12,10 +12,10 @@ $monthly  = BorrowRequest::monthlyActivity((int)date('Y'));
 $pageTitle= 'Home';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= e(app_language_tag()) ?>" data-theme="<?= e(app_theme()) ?>" data-compact="<?= app_compact_mode() ? '1' : '0' ?>">
 <head>
 <meta charset="UTF-8">
-<title>Admin Dashboard — ACLC</title>
+<title><?= e(t('Admin Dashboard')) ?> — ACLC</title>
 <link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=8">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
@@ -26,23 +26,23 @@ $pageTitle= 'Home';
     <?php include __DIR__ . '/includes/header.php'; ?>
 
     <section class="stat-grid">
-      <div class="stat-card"><span class="stat-label">Total Equipment</span><span class="stat-value"><?= (int)$counts['total'] ?></span></div>
-      <div class="stat-card"><span class="stat-label">Available</span><span class="stat-value"><?= (int)$counts['available'] ?></span></div>
-      <div class="stat-card"><span class="stat-label">Pending</span><span class="stat-value"><?= (int)$pending ?></span></div>
-      <div class="stat-card"><span class="stat-label">Borrowing</span><span class="stat-value"><?= (int)$borrowing ?></span></div>
-      <div class="stat-card"><span class="stat-label">Maintenance</span><span class="stat-value"><?= (int)$counts['maintenance'] ?></span></div>
+      <div class="stat-card"><span class="stat-label"><?= e(t('Total Equipment')) ?></span><span class="stat-value"><?= (int)$counts['total'] ?></span></div>
+      <div class="stat-card"><span class="stat-label"><?= e(t('Available')) ?></span><span class="stat-value"><?= (int)$counts['available'] ?></span></div>
+      <div class="stat-card"><span class="stat-label"><?= e(t('Pending')) ?></span><span class="stat-value"><?= (int)$pending ?></span></div>
+      <div class="stat-card"><span class="stat-label"><?= e(t('Borrowing')) ?></span><span class="stat-value"><?= (int)$borrowing ?></span></div>
+      <div class="stat-card"><span class="stat-label"><?= e(t('Maintenance')) ?></span><span class="stat-value"><?= (int)$counts['maintenance'] ?></span></div>
     </section>
 
     <section class="dash-grid">
       <div class="card chart-card">
         <div class="card-head">
           <div>
-            <h2>Monthly Equipment Activity (<?= date('Y') ?>)</h2>
-            <p class="muted">Overview of item checkouts and returns per month</p>
+            <h2><?= e(t('Monthly Equipment Activity')) ?> (<?= date('Y') ?>)</h2>
+            <p class="muted"><?= e(t('Overview of item checkouts and returns per month')) ?></p>
           </div>
           <div class="legend">
-            <span><i class="dot-borrowed"></i>Borrowed</span>
-            <span><i class="dot-returned"></i>Returned</span>
+            <span><i class="dot-borrowed"></i><?= e(t('Borrowed')) ?></span>
+            <span><i class="dot-returned"></i><?= e(t('Returned')) ?></span>
           </div>
         </div>
         <canvas id="chart" height="260" data-months='<?= json_encode($monthly) ?>'></canvas>
@@ -54,8 +54,8 @@ $pageTitle= 'Home';
     <section class="card pending-card">
       <div class="card-head">
         <div>
-          <h2>Pending Requests</h2>
-          <p class="muted">Review equipment requests waiting for approval.</p>
+          <h2><?= e(t('Pending Requests')) ?></h2>
+          <p class="muted"><?= e(t('Review equipment requests waiting for approval.')) ?></p>
         </div>
       </div>
       <div class="active-list">
@@ -63,13 +63,13 @@ $pageTitle= 'Home';
         <div class="active-row pending">
           <div>
             <strong><?= e($p['equipment_name']) ?></strong>
-            <small>(SN: <?= e($p['serial_number']) ?>)</small>
-            <small> · Quantity: <?= (int)($p['quantity'] ?? 1) ?></small>
-            <p><?= e($p['student_name']) ?> · <?= e($p['classroom']) ?> · Purpose: <?= e($p['purpose']) ?></p>
+            <small>(<?= e(t('SN:')) ?> <?= e($p['serial_number']) ?>)</small>
+            <small> · <?= e(t('Quantity:')) ?> <?= (int)($p['quantity'] ?? 1) ?></small>
+            <p><?= e($p['student_name']) ?> · <?= e($p['classroom']) ?> · <?= e(t('Purpose:')) ?> <?= e($p['purpose']) ?></p>
           </div>
           <div class="return-actions">
-            <a class="btn-approve" href="actions.php?do=approve&id=<?= (int)$p['id'] ?>">Approve</a>
-            <a class="btn-reject" href="actions.php?do=reject&id=<?= (int)$p['id'] ?>">Reject</a>
+            <a class="btn-approve" href="actions.php?do=approve&id=<?= (int)$p['id'] ?>"><?= e(t('Approve')) ?></a>
+            <a class="btn-reject" href="actions.php?do=reject&id=<?= (int)$p['id'] ?>"><?= e(t('Reject')) ?></a>
           </div>
         </div>
         <?php endforeach; ?>
@@ -79,14 +79,14 @@ $pageTitle= 'Home';
 
 <div class="modal-backdrop" id="returnModal">
   <div class="modal">
-    <h3>Inspect Returned Item</h3>
-    <p>Select the item's condition:</p>
+    <h3><?= e(t('Inspect Returned Item')) ?></h3>
+    <p><?= e(t("Select the item's condition:")) ?></p>
     <div class="condition-choices">
-      <button data-c="good">Returned (Good)</button>
-      <button data-c="damaged">Broken</button>
-      <button data-c="lost">Lost</button>
+      <button data-c="good"><?= e(t('Returned (Good)')) ?></button>
+      <button data-c="damaged"><?= e(t('Broken')) ?></button>
+      <button data-c="lost"><?= e(t('Lost')) ?></button>
     </div>
-    <button class="modal-close" onclick="closeModal()">Cancel</button>
+    <button class="modal-close" onclick="closeModal()"><?= e(t('Cancel')) ?></button>
   </div>
 </div>
 

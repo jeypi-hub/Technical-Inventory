@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/AuditLog.php';
 
 class Equipment
 {
@@ -67,8 +68,35 @@ class Equipment
 
     public static function setStatus(int $id, string $status): void
     {
-        $stmt = db()->prepare('UPDATE equipment SET status = ? WHERE id = ?');
-        $stmt->execute([$status, $id]);
+        $pdo = db();
+        $stmt = $pdo->prepare('SELECT status FROM equipment WHERE id = ? FOR UPDATE');
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $stmt->execute([$id]);
+            $previousStatus = $stmt->fetchColumn();
+            if (!is_string($previousStatus) || $previousStatus === $status) {
+                if ($ownsTransaction) {
+                    $pdo->commit();
+                }
+                return;
+            }
+            $pdo->prepare('UPDATE equipment SET status = ? WHERE id = ?')->execute([$status, $id]);
+            AuditLog::record('equipment.updated', 'equipment', (string)$id, [
+                'status_from' => $previousStatus,
+                'status_to' => $status,
+            ]);
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 
     public static function setStatusByNameQuantity(int $equipmentId, int $quantity, string $status): bool
@@ -77,7 +105,10 @@ class Equipment
         if (!$equipment || $quantity < 1) return false;
 
         $pdo = db();
-        $pdo->beginTransaction();
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
         try {
             $stmt = $pdo->prepare(
                 "SELECT id FROM equipment WHERE name = ? AND status = 'available' ORDER BY id LIMIT " . (int)$quantity . " FOR UPDATE"
@@ -85,7 +116,9 @@ class Equipment
             $stmt->execute([$equipment['name']]);
             $rows = $stmt->fetchAll();
             if (count($rows) < $quantity) {
-                $pdo->rollBack();
+                if ($ownsTransaction) {
+                    $pdo->rollBack();
+                }
                 return false;
             }
 
@@ -93,10 +126,18 @@ class Equipment
             $placeholders = implode(',', array_fill(0, count($ids), '?'));
             $update = $pdo->prepare("UPDATE equipment SET status = ? WHERE id IN ($placeholders)");
             $update->execute(array_merge([$status], $ids));
-            $pdo->commit();
+            foreach ($ids as $id) {
+                AuditLog::record('equipment.updated', 'equipment', (string)$id, [
+                    'status_from' => 'available',
+                    'status_to' => $status,
+                ]);
+            }
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
             return true;
         } catch (\Throwable $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
+            if ($ownsTransaction && $pdo->inTransaction()) $pdo->rollBack();
             throw $e;
         }
     }
@@ -107,17 +148,41 @@ class Equipment
         if (!$equipment || $quantity < 1) return;
 
         $pdo = db();
-        $stmt = $pdo->prepare(
-            "SELECT id FROM equipment WHERE name = ? AND status = 'borrowed' ORDER BY id LIMIT " . (int)$quantity
-        );
-        $stmt->execute([$equipment['name']]);
-        $rows = $stmt->fetchAll();
-        $ids = array_column($rows, 'id');
-        if (!$ids) return;
+        $ownsTransaction = !$pdo->inTransaction();
+        if ($ownsTransaction) {
+            $pdo->beginTransaction();
+        }
+        try {
+            $stmt = $pdo->prepare(
+                "SELECT id FROM equipment WHERE name = ? AND status = 'borrowed' ORDER BY id LIMIT " . (int)$quantity . ' FOR UPDATE'
+            );
+            $stmt->execute([$equipment['name']]);
+            $ids = array_column($stmt->fetchAll(), 'id');
+            if (!$ids) {
+                if ($ownsTransaction) {
+                    $pdo->commit();
+                }
+                return;
+            }
 
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $pdo->prepare("UPDATE equipment SET status = ? WHERE id IN ($placeholders)")
-            ->execute(array_merge([$status], $ids));
+            $placeholders = implode(',', array_fill(0, count($ids), '?'));
+            $pdo->prepare("UPDATE equipment SET status = ? WHERE id IN ($placeholders)")
+                ->execute(array_merge([$status], $ids));
+            foreach ($ids as $id) {
+                AuditLog::record('equipment.updated', 'equipment', (string)$id, [
+                    'status_from' => 'borrowed',
+                    'status_to' => $status,
+                ]);
+            }
+            if ($ownsTransaction) {
+                $pdo->commit();
+            }
+        } catch (Throwable $e) {
+            if ($ownsTransaction && $pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
     }
 
     public static function counts(): array
