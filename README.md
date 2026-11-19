@@ -47,6 +47,16 @@ Technical_Inventory/
 
 If your MySQL user/password differ from XAMPP defaults, edit `config/database.php`.
 
+## 📲 Install as an app (PWA)
+
+The same responsive system can be installed from a supported browser on Android, iOS/iPadOS, and desktop:
+
+1. Deploy the site over **HTTPS** (or open it on `localhost` while developing).
+2. Visit the site and choose **Install app** when prompted. On iPhone/iPad, use Safari's **Share → Add to Home Screen**.
+3. Open the installed ACLC Inventory app from the device home screen or app launcher.
+
+The service worker caches the app's static files and an offline page. Sign-in, equipment data, borrow requests, and other system actions still require a network connection to the PHP server and database; private pages and data are not stored for offline use.
+
 ## 🔑 Demo accounts (password for all: `password123`)
 
 | Role    | ID                   |
@@ -74,7 +84,7 @@ Student IDs must match `C##-##-####-MAN###` (strict format validation).
 - Monthly Equipment Activity chart (Borrowed vs Returned) — pure canvas, no libs
 - Active Checkouts with **Mark as Return** → *Good / Broken / Lost*
 - Approve / Reject pending requests
-- Manage Catalog: add name + image → **auto-generated `SN-XXXXXXXX` serial**
+- Manage Catalog: add name, quantity, and optional image from the catalog popup → each unit receives an **auto-generated `SN-XXXXXXXX` serial**
 - History Log with search + **Excel export**
 - Hover-expand sidebar
 - Notification bell with unread dot

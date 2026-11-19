@@ -18,6 +18,7 @@ $flash = $_GET['flash'] ?? '';
 <meta charset="UTF-8">
 <title>Student Dashboard — ACLC</title>
 <link rel="stylesheet" href="../assets/css/student_dashboard.css">
+<?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
 <header class="stud-topbar">
