@@ -6,11 +6,11 @@ $user = User::requireLogin('student');
 $rows = BorrowRequest::forUser((int)$user['id']);
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= e(app_language_tag()) ?>" data-theme="<?= e(app_theme()) ?>" data-compact="<?= app_compact_mode() ? '1' : '0' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Borrow History — ACLC</title>
+<title><?= e(t('My Borrow History')) ?> — ACLC</title>
 <link rel="stylesheet" href="../assets/css/student_dashboard.css">
 <link rel="stylesheet" href="../assets/css/history.css">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
@@ -22,18 +22,19 @@ $rows = BorrowRequest::forUser((int)$user['id']);
     <div><strong>ACLC COLLEGE</strong><span>MANDAUE CITY</span></div>
   </div>
   <div class="stud-right">
-  <a href="student_dashboard.php" class="back-btn">← Back</a>
-  <a href="../auth/student_logout.php" class="logout-btn">Logout</a>
+  <a href="student_dashboard.php" class="back-btn">← <?= e(t('Back')) ?></a>
+  <a href="../settings.php" class="back-btn"><?= e(t('Settings')) ?></a>
+  <a href="../auth/student_logout.php" class="logout-btn"><?= e(t('Logout')) ?></a>
 </div>
 </header>
 <main class="stud-main">
-  <?php if (!empty($_GET['flash'])): ?><div class="flash"><?= e($_GET['flash']) ?></div><?php endif; ?>
+  <?php if (!empty($_GET['flash'])): ?><div class="flash"><?= e(t($_GET['flash'])) ?></div><?php endif; ?>
   <div class="card hist-card">
-    <h2>My Borrowing Request History</h2>
+    <h2><?= e(t('My Borrowing Request History')) ?></h2>
     <div class="table-wrap">
       <table class="data-table hist">
         <thead>
-          <tr><th>ID</th><th>Date &amp; Time</th><th>Equipment</th><th>Serial No.</th><th>Quantity</th><th>Classroom</th><th>Teacher</th><th>Purpose</th><th>Status</th><th>Action</th></tr>
+          <tr><th><?= e(t('ID')) ?></th><th><?= e(t('Date & Time')) ?></th><th><?= e(t('Equipment')) ?></th><th><?= e(t('Serial No.')) ?></th><th><?= e(t('Quantity')) ?></th><th><?= e(t('Classroom')) ?></th><th><?= e(t('Teacher')) ?></th><th><?= e(t('Purpose')) ?></th><th><?= e(t('Status')) ?></th><th><?= e(t('Action')) ?></th></tr>
         </thead>
         <tbody>
         <?php foreach ($rows as $r):
@@ -47,18 +48,18 @@ $rows = BorrowRequest::forUser((int)$user['id']);
             <td><?= e($r['classroom']) ?></td>
             <td><?= e($r['teacher']) ?></td>
             <td><?= e($r['purpose']) ?></td>
-            <td><span class="status <?= e($r['status']) ?>"><?= ucfirst(e($r['status'])) ?></span></td>
+            <td><span class="status <?= e($r['status']) ?>"><?= e(t(ucfirst($r['status']))) ?></span></td>
             <td>
               <?php if ($r['status'] === 'pending'): ?>
                 <a class="btn-cancel" href="actions.php?do=cancel&id=<?= (int)$r['id'] ?>"
-                   onclick="return confirm('Cancel this pending request?')">Cancel</a>
+                   onclick="return confirm(<?= e(json_encode(t('Cancel this pending request?'))) ?>)"><?= e(t('Cancel')) ?></a>
               <?php else: ?>
                 <span class="muted">—</span>
               <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>
-        <?php if (empty($rows)): ?><tr><td colspan="10" class="empty">No requests yet.</td></tr><?php endif; ?>
+        <?php if (empty($rows)): ?><tr><td colspan="10" class="empty"><?= e(t('No requests yet.')) ?></td></tr><?php endif; ?>
         </tbody>
       </table>
     </div>

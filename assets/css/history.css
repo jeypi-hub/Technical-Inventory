@@ -118,6 +118,108 @@
   color: var(--muted);
   padding: 30px;
 }
+
+.role-assignment-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 250px;
+}
+
+.role-assignment-form select,
+.audit-filters input,
+.audit-filters select {
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--ink);
+}
+
+.role-assignment-form button,
+.audit-filters button,
+.audit-clear-button {
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.role-assignment-form button,
+.audit-filters button {
+  min-height: 40px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--blue-800);
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.audit-clear-button {
+  display: inline-block;
+  border-radius: 24px;
+  font: inherit;
+}
+
+.audit-filters {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.audit-filters label {
+  display: grid;
+  gap: 5px;
+  min-width: 180px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.audit-filters input {
+  min-width: min(280px, 70vw);
+}
+
+.audit-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.audit-pagination a {
+  color: var(--blue-800);
+  font-weight: 700;
+}
+
+.data-table.hist details {
+  white-space: normal;
+  min-width: 160px;
+}
+
+.data-table.hist details pre {
+  max-width: 340px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .role-assignment-form {
+    min-width: 220px;
+    flex-wrap: wrap;
+  }
+
+  .audit-filters,
+  .audit-filters label,
+  .audit-filters input {
+    width: 100%;
+  }
+}
+
 .back-btn, .logout-btn {
   display: inline-flex;
   align-items: center;

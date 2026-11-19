@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
+require_once __DIR__ . '/../classes/AuditLog.php';
 start_session_once();
 
 $error = '';
@@ -9,10 +10,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $pw = $_POST['password'] ?? '';
     $u  = User::authenticate($id, $pw, 'admin');
     if ($u) {
+        AuditLog::record('auth.login.success', 'user', (string)$u['id'], [], $u);
         $_SESSION['user'] = $u;
         header('Location: ../admin/admin_dashboard.php');
         exit;
     }
+    AuditLog::record('auth.login.failed', 'user', null, ['attempted_user_id' => $id]);
     $error = 'Invalid credentials.';
 }
 ?>
