@@ -12,6 +12,7 @@ $rows = BorrowRequest::forUser((int)$user['id']);
 <title>My Borrow History — ACLC</title>
 <link rel="stylesheet" href="../assets/css/student_dashboard.css">
 <link rel="stylesheet" href="../assets/css/history.css">
+<?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
 <header class="stud-topbar">

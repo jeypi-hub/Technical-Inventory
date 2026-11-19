@@ -27,7 +27,13 @@ switch ($do) {
 
     case 'add_equipment':
         $name = trim($_POST['name'] ?? '');
-        if ($name === '') { header('Location: manage_equipment.php?flash=Name required'); exit; }
+        $quantity = filter_var($_POST['quantity'] ?? null, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+        if ($name === '' || $quantity === false) {
+            header('Location: manage_equipment.php?flash=' . urlencode('Name and a quantity of at least 1 are required'));
+            exit;
+        }
         $imageName = null;
         if (!empty($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
             $ext = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
@@ -38,8 +44,11 @@ switch ($do) {
                     __DIR__ . '/../assets/upload/' . $imageName);
             }
         }
-        Equipment::create($name, $imageName);
-        header('Location: manage_equipment.php?flash=Equipment added'); exit;
+        for ($i = 0; $i < $quantity; $i++) {
+            Equipment::create($name, $imageName);
+        }
+        $message = $quantity === 1 ? 'Equipment added' : $quantity . ' equipment items added';
+        header('Location: manage_equipment.php?flash=' . urlencode($message)); exit;
 
     case 'delete_equipment':
         Equipment::delete((int)($_GET['id'] ?? 0));

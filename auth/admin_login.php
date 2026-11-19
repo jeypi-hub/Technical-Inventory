@@ -20,9 +20,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Technical Equipment Inventory System</title>
   <link rel="stylesheet" href="../assets/css/admin_login.css">
+  <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
 

@@ -18,6 +18,7 @@ $pageTitle= 'Home';
 <meta charset="UTF-8">
 <title>Admin Dashboard — ACLC</title>
 <link rel="stylesheet" href="../assets/css/admin_dashboard.css">
+<?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
 <div class="app-shell">
