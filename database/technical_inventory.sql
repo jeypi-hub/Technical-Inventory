@@ -10,7 +10,7 @@ CREATE DATABASE IF NOT EXISTS `technical_inventory`
 USE `technical_inventory`;
 
 -- -------------------------------------------------------------
---  users : holds both admins and students
+--  users : holds admins, staff, and students
 -- -------------------------------------------------------------
 DROP TABLE IF EXISTS `users`;
 CREATE TABLE `users` (
@@ -20,7 +20,7 @@ CREATE TABLE `users` (
   `email`      VARCHAR(160) DEFAULT NULL,
   `course`     VARCHAR(80)  DEFAULT NULL,
   `password`   VARCHAR(255) NOT NULL,
-  `role`       ENUM('admin','student') NOT NULL DEFAULT 'student',
+  `role`       ENUM('admin','staff','student') NOT NULL DEFAULT 'student',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_users_role` (`role`)
 ) ENGINE=InnoDB;
@@ -87,6 +87,8 @@ CREATE TABLE `notifications` (
 INSERT INTO `users` (`user_id`, `name`, `email`, `course`, `password`, `role`) VALUES
   ('ADMIN-001',           'Technical Admin', 'admin@aclc.edu.ph', 'Administrator',
    '$2b$10$dEygJtmiYtcLreOPSKocv.22ZMdli2i4GnDsZr.ru96EnaFFKH9Re', 'admin'),
+  ('STAFF-001',           'Technical Staff', 'staff@aclc.edu.ph', 'Staff',
+   '$2y$10$.XzU0qLlQRiNOc251TIXrOyAcn3wd4Os.hBI3JpcML/e/m.pL4ebO', 'staff'),
   ('C24-01-1524-MAN121',  'User 1', 'user1@aclc.edu.ph', 'BSIT',
    '$2b$10$dEygJtmiYtcLreOPSKocv.22ZMdli2i4GnDsZr.ru96EnaFFKH9Re', 'student'),
   ('C24-01-9654-MAN121',  'User 2', 'user2@aclc.edu.ph', 'BSCS',

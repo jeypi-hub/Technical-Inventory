@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/Equipment.php';
-$user = User::requireLogin('admin');
+$user = User::requireStaffOrAdmin();
 
 $flash = $_GET['flash'] ?? '';
 $search = trim($_GET['q'] ?? '');

@@ -46,6 +46,7 @@ Technical_Inventory/
 4. **Open** `http://localhost/Technical_Inventory/`
 
 If your MySQL user/password differ from XAMPP defaults, edit `config/database.php`.
+For an existing installation, run `database/migration_v4.sql` in phpMyAdmin to add staff role support and the demo staff account.
 
 ## 📲 Install as an app (PWA)
 
@@ -62,10 +63,11 @@ The service worker caches the app's static files and an offline page. Sign-in, e
 | Role    | ID                   |
 |---------|----------------------|
 | Admin   | `ADMIN-001`          |
+| Staff   | `STAFF-001`          |
 | Student | `C24-01-1524-MAN121` |
 | Student | `C24-01-9654-MAN121` |
 
-Student IDs must match `C##-##-####-MAN###` (strict format validation).
+The demo password is `password123` for all listed accounts. Students and staff share the Student & Staff Portal; student IDs must match `C##-##-####-MAN###`.
 
 ## ✨ Features
 
@@ -78,8 +80,9 @@ Student IDs must match `C##-##-####-MAN###` (strict format validation).
 - **Email alerts** on approve / reject (see mail setup below)
 - Personal borrow history
 
-**Admin**
-- Login
+**Admin and Staff**
+- Admins use the Admin Portal; staff and students share the Student & Staff Portal
+- Staff have the same management capabilities as admins
 - Dashboard: **Total, Available, Pending, Borrowing, Maintenance**
 - Monthly Equipment Activity chart (Borrowed vs Returned) — pure canvas, no libs
 - Dedicated Active Checkouts page with **Mark as Return** → *Good / Broken / Lost*

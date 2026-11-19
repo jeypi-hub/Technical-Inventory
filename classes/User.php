@@ -18,6 +18,14 @@ class User
         return $u;
     }
 
+    public static function authenticateStudentOrStaff(string $userId, string $password): ?array
+    {
+        $u = self::findByUserId($userId);
+        if (!$u || !in_array($u['role'], ['student', 'staff'], true)) return null;
+        if (!password_verify($password, $u['password'])) return null;
+        return $u;
+    }
+
     /** Strict student ID format: e.g. C24-01-1524-MAN121  */
     public static function isValidStudentId(string $id): bool
     {
@@ -28,9 +36,20 @@ class User
     {
         start_session_once();
         if (empty($_SESSION['user']) || $_SESSION['user']['role'] !== $role) {
-            $redirect = $role === 'admin' ? '/Technical_Inventory/auth/admin_login.php'
-                                          : '/Technical_Inventory/auth/student_login.php';
+            $redirect = $role === 'admin' ? '../auth/admin_login.php'
+                                          : '../auth/student_login.php';
             header("Location: $redirect");
+            exit;
+        }
+        return $_SESSION['user'];
+    }
+
+    public static function requireStaffOrAdmin(): array
+    {
+        start_session_once();
+        if (empty($_SESSION['user']) ||
+            !in_array($_SESSION['user']['role'], ['admin', 'staff'], true)) {
+            header('Location: ../auth/student_login.php');
             exit;
         }
         return $_SESSION['user'];

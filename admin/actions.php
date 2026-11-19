@@ -4,7 +4,7 @@ require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/Equipment.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
-$user = User::requireLogin('admin');
+$user = User::requireStaffOrAdmin();
 
 $do = $_GET['do'] ?? $_POST['do'] ?? '';
 
