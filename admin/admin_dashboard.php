@@ -63,6 +63,7 @@ $pageTitle= 'Home';
               <div>
                 <strong><?= e($a['equipment_name']) ?></strong>
                 <small>(SN: <?= e($a['serial_number']) ?>)</small>
+                <small> · Quantity: <?= (int)($a['quantity'] ?? 1) ?></small>
                 <?php if ($isOverdue): ?>
                   <span class="badge-overdue">OVERDUE (> 2 hrs)</span>
                 <?php endif; ?>
@@ -85,6 +86,7 @@ $pageTitle= 'Home';
             <div>
               <strong><?= e($p['equipment_name']) ?></strong>
               <small>(SN: <?= e($p['serial_number']) ?>)</small>
+              <small> · Quantity: <?= (int)($p['quantity'] ?? 1) ?></small>
               <p><?= e($p['student_name']) ?> · <?= e($p['classroom']) ?> · Purpose: <?= e($p['purpose']) ?></p>
             </div>
             <div class="return-actions">

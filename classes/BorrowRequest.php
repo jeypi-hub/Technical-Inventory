@@ -6,20 +6,21 @@ require_once __DIR__ . '/Mailer.php';
 
 class BorrowRequest
 {
-    public static function create(int $userId, int $equipmentId, string $purpose, string $classroom, string $teacher): int
+    public static function create(int $userId, int $equipmentId, int $quantity, string $purpose, string $classroom, string $teacher): int
     {
+        $quantity = max(1, $quantity);
         $stmt = db()->prepare(
-            'INSERT INTO borrow_requests (user_id, equipment_id, purpose, classroom, teacher, status)
-             VALUES (?, ?, ?, ?, ?, "pending")'
+            'INSERT INTO borrow_requests (user_id, equipment_id, purpose, classroom, teacher, quantity, status)
+             VALUES (?, ?, ?, ?, ?, ?, "pending")'
         );
-        $stmt->execute([$userId, $equipmentId, $purpose, $classroom, $teacher]);
+        $stmt->execute([$userId, $equipmentId, $purpose, $classroom, $teacher, $quantity]);
         $reqId = (int) db()->lastInsertId();
 
         // Notify all admins
         $admins = db()->query("SELECT id FROM users WHERE role = 'admin'")->fetchAll();
         foreach ($admins as $a) {
             Notification::push((int)$a['id'], 'request',
-                "New borrow request submitted (Request #{$reqId})", $reqId);
+                "New borrow request submitted for {$quantity} item(s) (Request #{$reqId})", $reqId);
         }
         return $reqId;
     }
@@ -88,11 +89,12 @@ class BorrowRequest
     {
         $req = self::find($id);
         if (!$req) return;
+        $quantity = max(1, (int)($req['quantity'] ?? 1));
+        if (!Equipment::setStatusByNameQuantity((int)$req['equipment_id'], $quantity, 'borrowed')) return;
         db()->prepare("UPDATE borrow_requests SET status='approved', approved_at=NOW() WHERE id=?")
             ->execute([$id]);
-        Equipment::setStatus((int)$req['equipment_id'], 'borrowed');
         Notification::push((int)$req['user_id'], 'approved',
-            "Your request for {$req['equipment_name']} was approved.", $id);
+            "Your request for {$quantity} {$req['equipment_name']} item(s) was approved.", $id);
         Mailer::notifyDecision((int)$req['user_id'], 'approved', $req);
     }
 
@@ -132,7 +134,11 @@ class BorrowRequest
              SET status=?, condition_on_return=?, returned_at=NOW()
              WHERE id=?"
         )->execute([$status, $condition, $id]);
-        Equipment::setStatus((int)$req['equipment_id'], $eqStatus);
+        Equipment::setStatusForBorrowedQuantity(
+            (int)$req['equipment_id'],
+            max(1, (int)($req['quantity'] ?? 1)),
+            $eqStatus
+        );
 
         Notification::push((int)$req['user_id'], 'returned',
             "Your borrowed item {$req['equipment_name']} was marked as {$status}.", $id);

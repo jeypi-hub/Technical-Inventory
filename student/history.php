@@ -9,6 +9,7 @@ $rows = BorrowRequest::forUser((int)$user['id']);
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>My Borrow History — ACLC</title>
 <link rel="stylesheet" href="../assets/css/student_dashboard.css">
 <link rel="stylesheet" href="../assets/css/history.css">
@@ -32,7 +33,7 @@ $rows = BorrowRequest::forUser((int)$user['id']);
     <div class="table-wrap">
       <table class="data-table hist">
         <thead>
-          <tr><th>ID</th><th>Date &amp; Time</th><th>Equipment</th><th>Serial No.</th><th>Classroom</th><th>Teacher</th><th>Purpose</th><th>Status</th><th>Action</th></tr>
+          <tr><th>ID</th><th>Date &amp; Time</th><th>Equipment</th><th>Serial No.</th><th>Quantity</th><th>Classroom</th><th>Teacher</th><th>Purpose</th><th>Status</th><th>Action</th></tr>
         </thead>
         <tbody>
         <?php foreach ($rows as $r):
@@ -42,6 +43,7 @@ $rows = BorrowRequest::forUser((int)$user['id']);
             <td><?= e(date('M d, Y h:i A', strtotime($dt))) ?></td>
             <td><?= e($r['equipment_name']) ?></td>
             <td><?= e($r['serial_number']) ?></td>
+            <td><?= (int)($r['quantity'] ?? 1) ?></td>
             <td><?= e($r['classroom']) ?></td>
             <td><?= e($r['teacher']) ?></td>
             <td><?= e($r['purpose']) ?></td>
@@ -53,10 +55,10 @@ $rows = BorrowRequest::forUser((int)$user['id']);
               <?php else: ?>
                 <span class="muted">—</span>
               <?php endif; ?>
-            </td>
+            </td> 
           </tr>
         <?php endforeach; ?>
-        <?php if (empty($rows)): ?><tr><td colspan="9" class="empty">No requests yet.</td></tr><?php endif; ?>
+        <?php if (empty($rows)): ?><tr><td colspan="10" class="empty">No requests yet.</td></tr><?php endif; ?>
         </tbody>
       </table>
     </div>
