@@ -1,5 +1,6 @@
-const CACHE_NAME = 'aclc-inventory-static-v2';
+const CACHE_NAME = 'aclc-inventory-static-v10';
 const APP_BASE = new URL('./', self.location).pathname;
+const ASSET_VERSION = '10';
 const PRECACHE_URLS = [
   'offline.html',
   'manifest.webmanifest',
@@ -18,7 +19,7 @@ const PRECACHE_URLS = [
   'assets/images/aclc_logo.png',
   'assets/images/pwa-192.png',
   'assets/images/pwa-512.png'
-].map(path => `${APP_BASE}${path}`);
+].map(path => `${APP_BASE}${path}?v=${ASSET_VERSION}`);
 
 self.addEventListener('install', event => {
   event.waitUntil(
@@ -47,7 +48,7 @@ self.addEventListener('fetch', event => {
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request).catch(async () => {
-        const offlinePage = await caches.match(`${APP_BASE}offline.html`);
+        const offlinePage = await caches.match(`${APP_BASE}offline.html`, { ignoreSearch: true });
         return offlinePage || Response.error();
       })
     );
@@ -56,7 +57,16 @@ self.addEventListener('fetch', event => {
 
   if (PRECACHE_URLS.includes(url.pathname)) {
     event.respondWith(
-      caches.match(request).then(cached => cached || fetch(request))
+      fetch(request)
+        .then(response => {
+          if (!response.ok) return response;
+          return caches.open(CACHE_NAME)
+            .then(cache => cache.put(request, response.clone()).then(() => response));
+        })
+        .catch(async () => {
+          const cached = await caches.match(request, { ignoreSearch: true });
+          return cached || Response.error();
+        })
     );
   }
 });

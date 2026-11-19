@@ -44,6 +44,7 @@
   .sidebar-brand { display: none; }
   .sidebar-nav {
     display: flex;
+    flex-direction: row;
     height: 64px;
     align-items: center;
     justify-content: space-around;
@@ -54,6 +55,7 @@
   .nav-item, .nav-item:hover {
     display: flex;
     flex: 1 1 0;
+    min-width: 0;
     flex-direction: column;
     justify-content: center;
     gap: 2px;
@@ -64,8 +66,21 @@
   }
 
   .nav-icon { width: auto; font-size: 18px; line-height: 1; }
-  .nav-label, .sidebar:hover .nav-label { opacity: 1; font-size: 10px; }
-  .main, .sidebar:hover ~ .main { margin-left: 0; padding: 16px 14px calc(78px + env(safe-area-inset-bottom)); }
+  .nav-label, .sidebar:hover .nav-label {
+    opacity: 1;
+    font-size: 10px;
+    line-height: 1.05;
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+  .main, .sidebar:hover ~ .main {
+    width: 100%;
+    min-width: 0;
+    margin-left: 0;
+    padding: 16px 14px calc(78px + env(safe-area-inset-bottom));
+  }
   .topbar { gap: 10px; padding: 13px 15px; }
   .page-title { font-size: clamp(18px, 5vw, 25px); }
   .topbar-right { gap: 8px; }

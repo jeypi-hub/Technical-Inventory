@@ -35,7 +35,7 @@ $pageTitle = 'Manage Catalog';
 <meta charset="UTF-8">
 <title>Manage Catalog — ACLC</title>
 <link rel="stylesheet" href="../assets/css/admin_dashboard.css">
-<link rel="stylesheet" href="../assets/css/manage_equipment.css">
+<link rel="stylesheet" href="../assets/css/manage_equipment.css?v=6">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
