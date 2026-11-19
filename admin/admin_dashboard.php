@@ -64,6 +64,7 @@ $pageTitle= 'Home';
           <div>
             <strong><?= e($p['equipment_name']) ?></strong>
             <small>(SN: <?= e($p['serial_number']) ?>)</small>
+            <small> · Quantity: <?= (int)($p['quantity'] ?? 1) ?></small>
             <p><?= e($p['student_name']) ?> · <?= e($p['classroom']) ?> · Purpose: <?= e($p['purpose']) ?></p>
           </div>
           <div class="return-actions">

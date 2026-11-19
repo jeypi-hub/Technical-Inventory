@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
+require_once __DIR__ . '/../classes/Equipment.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
@@ -8,15 +9,83 @@ $user = User::requireLogin('student');
 $do = $_GET['do'] ?? $_POST['do'] ?? '';
 
 switch ($do) {
+    case 'cart_request':
+        $purpose = trim($_POST['purpose'] ?? '');
+        $classroom = trim($_POST['classroom'] ?? '');
+        $teacher = trim($_POST['teacher'] ?? '');
+        $equipmentIds = $_POST['equipment_id'] ?? [];
+        $quantities = $_POST['quantity'] ?? [];
+        if ($purpose === '' || $classroom === '' || $teacher === '' ||
+            !is_array($equipmentIds) || !is_array($quantities) ||
+            count($equipmentIds) === 0 || count($equipmentIds) !== count($quantities)) {
+            header('Location: student_dashboard.php?flash=' . urlencode('Add items and complete all request details')); exit;
+        }
+
+        $requestedItems = [];
+        foreach (array_values($equipmentIds) as $index => $equipmentId) {
+            $equipmentId = (int)$equipmentId;
+            $quantity = (int)($quantities[$index] ?? 0);
+            if ($equipmentId < 1 || $quantity < 1) {
+                header('Location: student_dashboard.php?flash=' . urlencode('Borrow request contains an invalid item or quantity')); exit;
+            }
+
+            $equipment = Equipment::find($equipmentId);
+            if (!$equipment || $equipment['status'] !== 'available') {
+                header('Location: student_dashboard.php?flash=' . urlencode('An item in your request is no longer available')); exit;
+            }
+
+            $name = $equipment['name'];
+            if (!isset($requestedItems[$name])) {
+                $requestedItems[$name] = ['equipment_id' => $equipmentId, 'quantity' => 0];
+            }
+            $requestedItems[$name]['quantity'] += $quantity;
+        }
+
+        $availableCounts = Equipment::availableCountsByName();
+        foreach ($requestedItems as $name => $item) {
+            if ($item['quantity'] > ($availableCounts[$name] ?? 0)) {
+                header('Location: student_dashboard.php?flash=' . urlencode("Requested quantity for {$name} exceeds available stock")); exit;
+            }
+        }
+
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            foreach ($requestedItems as $item) {
+                BorrowRequest::create(
+                    (int)$user['id'],
+                    $item['equipment_id'],
+                    $item['quantity'],
+                    $purpose,
+                    $classroom,
+                    $teacher
+                );
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            throw $e;
+        }
+        header('Location: student_dashboard.php?flash=' . urlencode('Borrow request submitted — pending approval')); exit;
+
     case 'request':
         $equipId    = (int)($_POST['equipment_id'] ?? 0);
         $purpose    = trim($_POST['purpose']   ?? '');
         $classroom  = trim($_POST['classroom'] ?? '');
         $teacher    = trim($_POST['teacher']   ?? '');
-        if (!$equipId || !$purpose || !$classroom || !$teacher) {
+        $quantity   = (int)($_POST['quantity'] ?? 0);
+        if (!$equipId || !$purpose || !$classroom || !$teacher || $quantity < 1) {
             header('Location: student_dashboard.php?flash=All fields are required'); exit;
         }
-        BorrowRequest::create((int)$user['id'], $equipId, $purpose, $classroom, $teacher);
+        $equipment = Equipment::find($equipId);
+        if (!$equipment || $equipment['status'] !== 'available') {
+            header('Location: student_dashboard.php?flash=' . urlencode('Selected item is no longer available')); exit;
+        }
+        $availableCount = Equipment::availableCountsByName()[$equipment['name']] ?? 0;
+        if ($quantity > $availableCount) {
+            header('Location: student_dashboard.php?flash=' . urlencode('Requested quantity exceeds available stock')); exit;
+        }
+        BorrowRequest::create((int)$user['id'], $equipId, $quantity, $purpose, $classroom, $teacher);
         header('Location: student_dashboard.php?flash=Request submitted — pending approval'); exit;
 
     case 'notif_read':
