@@ -8,7 +8,6 @@ $user = User::requireLogin('admin');
 $counts   = Equipment::counts();
 $pending  = BorrowRequest::countPending();
 $borrowing= BorrowRequest::countBorrowing();
-$active   = BorrowRequest::active();
 $monthly  = BorrowRequest::monthlyActivity((int)date('Y'));
 $pageTitle= 'Home';
 ?>
@@ -17,7 +16,7 @@ $pageTitle= 'Home';
 <head>
 <meta charset="UTF-8">
 <title>Admin Dashboard — ACLC</title>
-<link rel="stylesheet" href="../assets/css/admin_dashboard.css">
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=8">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
@@ -48,58 +47,36 @@ $pageTitle= 'Home';
         </div>
         <canvas id="chart" height="260" data-months='<?= json_encode($monthly) ?>'></canvas>
       </div>
+    </section>
 
-      <div class="card active-card">
-        <h2>Active Checkouts</h2>
-        <div class="active-list">
-          <?php if (empty($active)): ?>
-            <div class="empty">No active checkouts.</div>
-          <?php else: foreach ($active as $a): 
-            // Calculate if more than 2 hours have passed since approval
-            $approvalTime = strtotime($a['approved_at'] ?? $a['requested_at']);
-            $isOverdue = (time() - $approvalTime) > (2 * 3600); // 2 hours in seconds
-          ?>
-            <div class="active-row <?= $isOverdue ? 'overdue-row' : '' ?>">
-              <div>
-                <strong><?= e($a['equipment_name']) ?></strong>
-                <small>(SN: <?= e($a['serial_number']) ?>)</small>
-                <small> · Quantity: <?= (int)($a['quantity'] ?? 1) ?></small>
-                <?php if ($isOverdue): ?>
-                  <span class="badge-overdue">OVERDUE (> 2 hrs)</span>
-                <?php endif; ?>
-                <p>Borrowed by: <?= e($a['student_name']) ?> (ID: <?= e($a['student_uid']) ?>) · Room: <?= e($a['classroom']) ?></p>
-              </div>
-              <div class="return-actions">
-                <button class="btn-return" onclick="markReturn(<?= (int)$a['id'] ?>)">Mark as Return</button>
-              </div>
-            </div>
-          <?php endforeach; endif; ?>
+    <?php $pendReqs = BorrowRequest::pending(); ?>
+    <?php if (!empty($pendReqs)): ?>
+    <section class="card pending-card">
+      <div class="card-head">
+        <div>
+          <h2>Pending Requests</h2>
+          <p class="muted">Review equipment requests waiting for approval.</p>
         </div>
-
-        <!-- Pending Requests -->
-        <?php $pendReqs = BorrowRequest::pending(); ?>
-        <?php if (!empty($pendReqs)): ?>
-        <h2 style="margin-top:22px">Pending Requests</h2>
-        <div class="active-list">
-          <?php foreach ($pendReqs as $p): ?>
-          <div class="active-row pending">
-            <div>
-              <strong><?= e($p['equipment_name']) ?></strong>
-              <small>(SN: <?= e($p['serial_number']) ?>)</small>
-              <small> · Quantity: <?= (int)($p['quantity'] ?? 1) ?></small>
-              <p><?= e($p['student_name']) ?> · <?= e($p['classroom']) ?> · Purpose: <?= e($p['purpose']) ?></p>
-            </div>
-            <div class="return-actions">
-              <a class="btn-approve" href="actions.php?do=approve&id=<?= (int)$p['id'] ?>">Approve</a>
-              <a class="btn-reject"  href="actions.php?do=reject&id=<?= (int)$p['id'] ?>">Reject</a>
-            </div>
-          </div>
-          <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
       </div>
+      <div class="active-list">
+        <?php foreach ($pendReqs as $p): ?>
+        <div class="active-row pending">
+          <div>
+            <strong><?= e($p['equipment_name']) ?></strong>
+            <small>(SN: <?= e($p['serial_number']) ?>)</small>
+            <small> · Quantity: <?= (int)($p['quantity'] ?? 1) ?></small>
+            <p><?= e($p['student_name']) ?> · <?= e($p['classroom']) ?> · Purpose: <?= e($p['purpose']) ?></p>
+          </div>
+          <div class="return-actions">
+            <a class="btn-approve" href="actions.php?do=approve&id=<?= (int)$p['id'] ?>">Approve</a>
+            <a class="btn-reject" href="actions.php?do=reject&id=<?= (int)$p['id'] ?>">Reject</a>
+          </div>
+        </div>
+        <?php endforeach; ?>
+      </div>
+    </section>
+    <?php endif; ?>
 
-<!-- Return condition modal -->
 <div class="modal-backdrop" id="returnModal">
   <div class="modal">
     <h3>Inspect Returned Item</h3>

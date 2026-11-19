@@ -3,7 +3,6 @@ require_once __DIR__ . '/../config/database.php';
 
 class Equipment
 {
-    /** Auto-generate a unique serial number like SN-A1B2C3D4 */
     public static function generateSerial(): string
     {
         do {

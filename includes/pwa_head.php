@@ -12,5 +12,5 @@ $appBasePath = htmlspecialchars($appBasePath, ENT_QUOTES, 'UTF-8');
 <link rel="manifest" href="<?= $appBasePath ?>/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="<?= $appBasePath ?>/assets/images/pwa-192.png">
 <link rel="apple-touch-icon" href="<?= $appBasePath ?>/assets/images/pwa-192.png">
-<link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/pwa.css">
-<script defer src="<?= $appBasePath ?>/assets/js/pwa.js"></script>
+<link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/pwa.css?v=10">
+<script defer src="<?= $appBasePath ?>/assets/js/pwa.js?v=7"></script>

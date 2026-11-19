@@ -55,7 +55,7 @@ $rows = BorrowRequest::forUser((int)$user['id']);
               <?php else: ?>
                 <span class="muted">—</span>
               <?php endif; ?>
-            </td> 
+            </td>
           </tr>
         <?php endforeach; ?>
         <?php if (empty($rows)): ?><tr><td colspan="10" class="empty">No requests yet.</td></tr><?php endif; ?>

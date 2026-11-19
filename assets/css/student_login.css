@@ -141,7 +141,6 @@
       color: #94a3b8;
     }
 
-    /* Password wrapper & eye icon alignment */
     .password-wrapper {
       position: relative;
       display: flex;
@@ -172,7 +171,6 @@
       stroke-linejoin: round;
     }
 
-    /* Styled Login Button with move-forward hover effect */
     .submit {
       width: 100%;
       padding: 12px;
@@ -190,12 +188,12 @@
 
     .submit:hover {
       background-color: #1d4ed8;
-      transform: translateY(-3px); /* Moves the button forward/up */
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* Deepens shadow for depth */
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); 
     }
 
     .submit:active {
-      transform: translateY(-1px); /* Slight press down effect when clicked */
+      transform: translateY(-1px); 
     }
 
     .alert {
@@ -208,7 +206,6 @@
       text-align: center;
     }
 
-    /* Responsive Media Query for Mobile & Tablets */
     @media (max-width: 768px) {
       .container {
         flex-direction: column;

@@ -4,7 +4,7 @@ require_once __DIR__ . '/../config/database.php';
 class Mailer
 {
     private static ?array $cfg = null;
-    private static array $log = [];   // last-run log — inspect at /admin/mail_log.php if needed
+    private static array $log = [];  
 
     public static function cfg(): array
     {
@@ -33,7 +33,6 @@ class Mailer
         return @mail($to, $subject, $htmlBody, $headers);
     }
 
-    /** Convenience for approve/reject flows. $req is a row from borrow_requests join. */
     public static function notifyDecision(int $userId, string $decision, array $req): void
     {
         $stmt = db()->prepare('SELECT name, email FROM users WHERE id = ?');

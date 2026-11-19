@@ -82,7 +82,8 @@ Student IDs must match `C##-##-####-MAN###` (strict format validation).
 - Login
 - Dashboard: **Total, Available, Pending, Borrowing, Maintenance**
 - Monthly Equipment Activity chart (Borrowed vs Returned) — pure canvas, no libs
-- Active Checkouts with **Mark as Return** → *Good / Broken / Lost*
+- Dedicated Active Checkouts page with **Mark as Return** → *Good / Broken / Lost*
+- Pending request approvals on the admin dashboard
 - Approve / Reject pending requests
 - Manage Catalog: add name, quantity, and optional image from the catalog popup → each unit receives an **auto-generated `SN-XXXXXXXX` serial**
 - History Log with search + **Excel export**
