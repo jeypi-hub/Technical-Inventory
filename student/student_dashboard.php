@@ -181,7 +181,8 @@ $flash = $_GET['flash'] ?? '';
         <div id="borrowCartHiddenItems"></div>
         <label>
           Purpose
-          <input type="text" name="purpose" placeholder="e.g. Lab Work" required>
+          <input type="text" id="borrowCartPurpose" name="purpose" placeholder="e.g. Lab Work"
+            pattern="[^0-9]+" title="Numbers are not allowed." required>
         </label>
         <label>
           Classroom
@@ -190,6 +191,7 @@ $flash = $_GET['flash'] ?? '';
         <div class="teacher-autocomplete">
           <label for="borrowCartTeacher">Teacher's Name</label>
           <input type="text" id="borrowCartTeacher" name="teacher" placeholder="Teacher's Name"
+            pattern="[^0-9]+" title="Numbers are not allowed."
             aria-autocomplete="list" aria-controls="cartTeacherSuggestions" aria-expanded="false" required>
           <div class="teacher-suggestions" id="cartTeacherSuggestions" role="listbox" hidden></div>
         </div>
@@ -219,6 +221,6 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </div>
 </dialog>
-<script src="../assets/js/student.js"></script>
+<script src="../assets/js/student.js?v=11"></script>
 </body>
 </html>
