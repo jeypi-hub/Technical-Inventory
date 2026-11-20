@@ -6,6 +6,11 @@ require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
 
+if (($_GET['open'] ?? '') === 'borrow') {
+    header('Location: borrow_request.php');
+    exit;
+}
+
 $search = trim($_GET['q'] ?? '');
 $items  = Equipment::all($search ?: null);
 $availableCounts = Equipment::availableCountsByName();
@@ -19,10 +24,10 @@ $flash = $_GET['flash'] ?? '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('Student Dashboard')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=32">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=36">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
-<body class="has-student-nav">
+<body class="has-student-nav" data-borrow-cart-key="<?= e('aclc-borrow-cart-' . (int)$user['id']) ?>">
 <header class="stud-topbar">
   <div class="stud-brand">
     <img src="../assets/images/aclc_logo.png" alt="ACLC" class="brand-logo">
@@ -36,6 +41,31 @@ $flash = $_GET['flash'] ?? '';
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
       <?php if ($unread): ?><span class="dot"></span><?php endif; ?>
     </button>
+    <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <div class="profile-info">
+        <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
+        <span><?= e($user['course']) ?></span>
+      </div>
+      <div class="profile-panel" id="profilePanel">
+        <div class="pp-head">
+          <strong><?= e($user['name']) ?></strong>
+          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
+        </div>
+        <a href="profile.php" class="pp-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg>
+          <?= e(t('Profile')) ?>
+        </a>
+        <a href="../settings.php" class="pp-item">
+          <span aria-hidden="true">⚙</span>
+          <?= e(t('Settings')) ?>
+        </a>
+        <a href="../auth/student_logout.php" class="pp-logout">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <?= e(t('Logout')) ?>
+        </a>
+      </div>
+    </div>
   </div>
   <div class="stud-right">
     <a href="student_dashboard.php" class="mobile-nav-link home-nav-link" aria-label="<?= e(t('Home')) ?>" aria-current="page" title="<?= e(t('Home')) ?>">
@@ -45,14 +75,14 @@ $flash = $_GET['flash'] ?? '';
       </svg>
       <span class="nav-label"><?= e(t('Home')) ?></span>
     </a>
-    <button type="button" class="cart-btn" id="openBorrowCart" aria-label="<?= e(t('Open borrow request')) ?>" title="<?= e(t('Borrow Request')) ?>">
+    <a href="borrow_request.php" class="cart-btn" id="openBorrowCart" aria-label="<?= e(t('Open borrow request')) ?>" title="<?= e(t('Borrow Request')) ?>">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 3h8l4 4v14H7z"></path>
         <path d="M15 3v5h5M10 13h6M10 17h6"></path>
         <path d="M3 7v14h4"></path>
       </svg>
       <span class="cart-count" id="borrowCartCount" hidden>0</span>
-    </button>
+    </a>
     <a href="history.php" class="mobile-nav-link" aria-label="<?= e(t('My Borrow History')) ?>" title="<?= e(t('My Borrow History')) ?>">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="12" cy="12" r="10"></circle>
@@ -66,29 +96,6 @@ $flash = $_GET['flash'] ?? '';
         <path d="M8 8h3v3H8zM15 8v3M15 15h1M19 15v4M8 15h3v3H8z"></path>
       </svg>
     </button>
-    <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
-      <!-- User Avatar Icon -->
-      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-      <div class="profile-info">
-        <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
-        <span><?= e($user['course']) ?></span>
-      </div>
-      <div class="profile-panel" id="profilePanel">
-        <div class="pp-head">
-          <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
-        </div>
-        <a href="../settings.php" class="pp-item">
-          <span aria-hidden="true">⚙</span>
-          <?= e(t('Settings')) ?>
-        </a>
-        <a href="../auth/student_logout.php" class="pp-logout">
-          <!-- Logout Icon -->
-          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          <?= e(t('Logout')) ?>
-        </a>
-      </div>
-    </div>
   </div>
 </header>
 
@@ -185,40 +192,6 @@ $flash = $_GET['flash'] ?? '';
   </div>
 </dialog>
 
-<dialog class="item-dialog cart-dialog" id="borrowCartDialog" aria-labelledby="borrowCartTitle">
-  <div class="item-dialog-panel">
-    <button type="button" class="dialog-close" id="closeBorrowCart" aria-label="<?= e(t('Close borrow request')) ?>">&times;</button>
-    <div class="cart-content">
-      <h2 id="borrowCartTitle"><?= e(t('Borrow Request')) ?></h2>
-      <p class="cart-intro"><?= e(t('Review your items and submit them together.')) ?></p>
-      <p class="borrow-cart-empty" id="borrowCartEmpty"><?= e(t('No items selected. Add equipment to this request.')) ?></p>
-      <ul class="borrow-cart-items" id="borrowCartItems"></ul>
-      <form method="post" action="actions.php" class="cart-req-form" id="borrowCartForm">
-        <input type="hidden" name="do" value="cart_request">
-        <div id="borrowCartHiddenItems"></div>
-        <label>
-          <?= e(t('Purpose')) ?>
-          <input type="text" id="borrowCartPurpose" name="purpose" placeholder="<?= e(t('e.g. Lab Work')) ?>"
-            pattern="[^0-9]+" title="<?= e(t('Numbers are not allowed.')) ?>" required>
-        </label>
-        <label>
-          <?= e(t('Classroom')) ?>
-          <input type="text" name="classroom" placeholder="<?= e(t('e.g. Lab 5')) ?>" required>
-        </label>
-        <div class="teacher-autocomplete">
-          <label for="borrowCartTeacher"><?= e(t("Teacher's Name")) ?></label>
-          <input type="text" id="borrowCartTeacher" name="teacher" placeholder="<?= e(t("Teacher's Name")) ?>"
-            pattern="[^0-9]+" title="<?= e(t('Numbers are not allowed.')) ?>"
-            aria-autocomplete="list" aria-controls="cartTeacherSuggestions" aria-expanded="false" required>
-          <div class="teacher-suggestions" id="cartTeacherSuggestions" role="listbox" hidden></div>
-        </div>
-        <p class="cart-status" id="borrowCartStatus" role="status" aria-live="polite"></p>
-        <button type="submit" class="btn-primary" id="submitBorrowCart" disabled><?= e(t('Submit Borrow Request')) ?></button>
-      </form>
-    </div>
-  </div>
-</dialog>
-
 <dialog class="item-dialog scanner-dialog" id="headerScannerDialog" aria-labelledby="headerScannerTitle">
   <div class="item-dialog-panel">
     <button type="button" class="dialog-close" id="closeHeaderScanner" aria-label="<?= e(t('Close QR scanner')) ?>">&times;</button>
@@ -238,6 +211,6 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </div>
 </dialog>
-<script src="../assets/js/student.js?v=17"></script>
+<script src="../assets/js/student.js?v=18"></script>
 </body>
 </html>

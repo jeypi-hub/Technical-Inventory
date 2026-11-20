@@ -42,6 +42,7 @@ function toggleProfile() {
   document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', String(isOpen));
   closeNotifications();
 }
+
 window.addEventListener('resize', () => {
   if (document.getElementById('notifPanel')?.classList.contains('show')) {
     updateNotificationViewMode(true);
@@ -89,6 +90,19 @@ if (searchForm) {
     emptyMessage.textContent = query
       ? translate('No equipment matches your search.')
       : translate('No equipment yet.');
+  });
+}
+
+const historySearchForm = document.querySelector('.student-history-search');
+if (historySearchForm) {
+  const historySearchInput = historySearchForm.querySelector('input[name="q"]');
+  let historySearchTimer;
+
+  historySearchInput.addEventListener('input', () => {
+    window.clearTimeout(historySearchTimer);
+    historySearchTimer = window.setTimeout(() => {
+      historySearchForm.requestSubmit();
+    }, 500);
   });
 }
 
@@ -236,18 +250,51 @@ if (itemDialog) {
   const unavailableTile = document.getElementById('unavailableTile');
   const requestQuantity = document.getElementById('requestQuantity');
   const addItemToCartButton = document.getElementById('addItemToCart');
-  const cartDialog = document.getElementById('borrowCartDialog');
-  const cartItemsList = document.getElementById('borrowCartItems');
-  const cartEmptyMessage = document.getElementById('borrowCartEmpty');
-  const cartHiddenItems = document.getElementById('borrowCartHiddenItems');
   const cartCount = document.getElementById('borrowCartCount');
-  const submitCartButton = document.getElementById('submitBorrowCart');
+  const cartStorageKey = document.body.dataset.borrowCartKey;
   const cartItems = [];
   let selectedEquipment = null;
   let formRevealTimer;
 
+  const showCartStorageWarning = (message) => {
+    let warning = document.getElementById('borrowCartStorageWarning');
+    if (!warning) {
+      warning = document.createElement('div');
+      warning.id = 'borrowCartStorageWarning';
+      warning.className = 'flash';
+      document.querySelector('.stud-main')?.prepend(warning);
+    }
+    if (warning) warning.textContent = translate(message);
+  };
+  try {
+    const savedItems = JSON.parse(localStorage.getItem(cartStorageKey) || '[]');
+    if (
+      !Array.isArray(savedItems) ||
+      savedItems.some((item) =>
+        !item ||
+        !Number.isSafeInteger(item.equipmentId) ||
+        typeof item.name !== 'string' ||
+        !Number.isSafeInteger(item.quantity) ||
+        !Number.isSafeInteger(item.available)
+      )
+    ) {
+      throw new Error('Saved cart is invalid.');
+    }
+    cartItems.push(...savedItems);
+  } catch {
+    showCartStorageWarning('Saved request items could not be loaded. Add equipment again.');
+  }
+
   const quantityInCart = (name) =>
     cartItems.find((item) => item.name === name)?.quantity ?? 0;
+
+  const saveCart = () => {
+    try {
+      localStorage.setItem(cartStorageKey, JSON.stringify(cartItems));
+    } catch {
+      showCartStorageWarning('Your request items could not be saved in this browser.');
+    }
+  };
 
   const syncAddToCartButton = () => {
     if (!selectedEquipment) return;
@@ -258,92 +305,24 @@ if (itemDialog) {
   };
 
   const renderCart = () => {
-    cartItemsList.replaceChildren();
-    cartHiddenItems.replaceChildren();
-    cartEmptyMessage.hidden = cartItems.length > 0;
-    submitCartButton.disabled = cartItems.length === 0;
+    saveCart();
 
     const totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
     cartCount.textContent = String(totalQuantity);
     cartCount.hidden = totalQuantity === 0;
-    document.getElementById('openBorrowCart').setAttribute(
-      'aria-label',
-      translate(
-        totalQuantity === 1 ? 'Open borrow request, {count} item' : 'Open borrow request, {count} items',
-        { count: totalQuantity }
-      )
-    );
-
-    cartItems.forEach((item, index) => {
-      const row = document.createElement('li');
-      row.className = 'borrow-cart-item';
-
-      const details = document.createElement('div');
-      details.className = 'borrow-cart-item-details';
-      const name = document.createElement('strong');
-      name.textContent = item.name;
-      const stock = document.createElement('small');
-      stock.textContent = translate('{count} available', { count: item.available });
-      details.append(name, stock);
-
-      const controls = document.createElement('div');
-      controls.className = 'borrow-cart-item-controls';
-      const decrease = document.createElement('button');
-      decrease.type = 'button';
-      decrease.dataset.cartAction = 'decrease';
-      decrease.dataset.index = String(index);
-      decrease.setAttribute('aria-label', translate('Decrease {name} quantity', { name: item.name }));
-      decrease.textContent = '−';
-      decrease.disabled = item.quantity <= 1;
-      const quantity = document.createElement('span');
-      quantity.textContent = String(item.quantity);
-      const increase = document.createElement('button');
-      increase.type = 'button';
-      increase.dataset.cartAction = 'increase';
-      increase.dataset.index = String(index);
-      increase.setAttribute('aria-label', translate('Increase {name} quantity', { name: item.name }));
-      increase.textContent = '+';
-      increase.disabled = item.quantity >= item.available;
-      const remove = document.createElement('button');
-      remove.type = 'button';
-      remove.className = 'borrow-cart-remove';
-      remove.dataset.cartAction = 'remove';
-      remove.dataset.index = String(index);
-      remove.textContent = translate('Remove');
-      controls.append(decrease, quantity, increase, remove);
-      row.append(details, controls);
-      cartItemsList.appendChild(row);
-
-      const equipmentIdInput = document.createElement('input');
-      equipmentIdInput.type = 'hidden';
-      equipmentIdInput.name = 'equipment_id[]';
-      equipmentIdInput.value = String(item.equipmentId);
-      const itemQuantityInput = document.createElement('input');
-      itemQuantityInput.type = 'hidden';
-      itemQuantityInput.name = 'quantity[]';
-      itemQuantityInput.value = String(item.quantity);
-      cartHiddenItems.append(equipmentIdInput, itemQuantityInput);
-    });
+    const borrowLink = document.getElementById('openBorrowCart');
+    if (borrowLink) {
+      borrowLink.setAttribute(
+        'aria-label',
+        translate(
+          totalQuantity === 1 ? 'Open borrow request, {count} item' : 'Open borrow request, {count} items',
+          { count: totalQuantity }
+        )
+      );
+    }
 
     syncAddToCartButton();
   };
-
-  cartItemsList.addEventListener('click', (event) => {
-    const button = event.target.closest('button[data-cart-action]');
-    if (!button) return;
-    const index = Number(button.dataset.index);
-    const item = cartItems[index];
-    if (!item) return;
-
-    if (button.dataset.cartAction === 'increase' && item.quantity < item.available) {
-      item.quantity++;
-    } else if (button.dataset.cartAction === 'decrease' && item.quantity > 1) {
-      item.quantity--;
-    } else if (button.dataset.cartAction === 'remove') {
-      cartItems.splice(index, 1);
-    }
-    renderCart();
-  });
 
   requestQuantity.addEventListener('input', () => requestQuantity.setCustomValidity(''));
   addItemToCartButton.addEventListener('click', () => {
@@ -370,6 +349,8 @@ if (itemDialog) {
     renderCart();
     itemDialog.close();
   });
+
+  renderCart();
 
   document.querySelectorAll('.item-open').forEach((button) => {
     button.addEventListener('click', () => {
@@ -415,14 +396,6 @@ if (itemDialog) {
     requestQuantity.setCustomValidity('');
     itemDialog.classList.remove('show-form');
   });
-
-  document.getElementById('openBorrowCart').addEventListener('click', () => {
-    closeNotifications();
-    document.getElementById('profilePanel').classList.remove('show');
-    cartDialog.showModal();
-  });
-  document.getElementById('closeBorrowCart').addEventListener('click', () => cartDialog.close());
-  cartDialog.addEventListener('cancel', (event) => event.preventDefault());
 }
 
 const headerScannerDialog = document.getElementById('headerScannerDialog');
@@ -553,9 +526,7 @@ if (dashboardAction) {
   dashboardActionUrl.searchParams.delete('open');
   window.history.replaceState(null, '', `${dashboardActionUrl.pathname}${dashboardActionUrl.search}${dashboardActionUrl.hash}`);
 
-  if (dashboardAction === 'borrow') {
-    document.getElementById('borrowCartDialog')?.showModal();
-  } else if (dashboardAction === 'scanner') {
+  if (dashboardAction === 'scanner') {
     document.getElementById('openHeaderScanner')?.click();
   }
 }

@@ -4,7 +4,17 @@ require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
-$rows = BorrowRequest::forUser((int)$user['id']);
+$userId = (int)$user['id'];
+$search = trim(is_string($_GET['q'] ?? null) ? $_GET['q'] : '');
+$perPage = 5;
+$total = BorrowRequest::countForUser($userId, $search);
+$totalPages = max(1, (int)ceil($total / $perPage));
+$page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, [
+    'options' => ['min_range' => 1],
+]);
+$page = min($totalPages, $page === false ? 1 : $page);
+$rows = BorrowRequest::pageForUser($userId, $search, $perPage, ($page - 1) * $perPage);
+$paginationQuery = $search !== '' ? ['q' => $search] : [];
 $notifs = Notification::forUser((int)$user['id'], 10);
 $unread = Notification::unreadCount((int)$user['id']);
 ?>
@@ -14,11 +24,11 @@ $unread = Notification::unreadCount((int)$user['id']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('My Borrow History')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=27">
-<link rel="stylesheet" href="../assets/css/history.css?v=24">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=35">
+<link rel="stylesheet" href="../assets/css/history.css?v=30">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
-<body>
+<body data-borrow-cart-key="<?= e('aclc-borrow-cart-' . (int)$user['id']) ?>">
 <header class="stud-topbar">
   <div class="stud-brand">
     <img src="../assets/images/aclc_logo.png" alt="ACLC" class="brand-logo">
@@ -46,6 +56,34 @@ $unread = Notification::unreadCount((int)$user['id']);
         </div>
       <?php endforeach; endif; ?>
     </div>
+    <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <div class="profile-info">
+        <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
+        <span><?= e($user['course']) ?></span>
+      </div>
+      <div class="profile-panel" id="profilePanel">
+        <div class="pp-head">
+          <strong><?= e($user['name']) ?></strong>
+          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
+        </div>
+        <a href="profile.php" class="pp-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg>
+          <?= e(t('Profile')) ?>
+        </a>
+        <a href="../settings.php" class="pp-item">
+          <span aria-hidden="true">⚙</span>
+          <?= e(t('Settings')) ?>
+        </a>
+        <a href="../auth/student_logout.php" class="pp-logout">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <?= e(t('Logout')) ?>
+        </a>
+      </div>
+    </div>
   </div>
   <div class="stud-right">
     <a href="student_dashboard.php" class="mobile-nav-link home-nav-link" aria-label="<?= e(t('Home')) ?>" title="<?= e(t('Home')) ?>">
@@ -55,7 +93,7 @@ $unread = Notification::unreadCount((int)$user['id']);
       </svg>
       <span class="nav-label"><?= e(t('Home')) ?></span>
     </a>
-    <a href="student_dashboard.php?open=borrow" class="cart-btn" aria-label="<?= e(t('Open borrow request')) ?>" title="<?= e(t('Borrow Request')) ?>">
+    <a href="borrow_request.php" class="cart-btn" aria-label="<?= e(t('Open borrow request')) ?>" title="<?= e(t('Borrow Request')) ?>">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 3h8l4 4v14H7z"></path>
         <path d="M15 3v5h5M10 13h6M10 17h6"></path>
@@ -75,70 +113,84 @@ $unread = Notification::unreadCount((int)$user['id']);
         <path d="M8 8h3v3H8zM15 8v3M15 15h1M19 15v4M8 15h3v3H8z"></path>
       </svg>
     </a>
-    <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-      </svg>
-      <div class="profile-info">
-        <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
-        <span><?= e($user['course']) ?></span>
-      </div>
-      <div class="profile-panel" id="profilePanel">
-        <div class="pp-head">
-          <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
-        </div>
-        <a href="../settings.php" class="pp-item">
-          <span aria-hidden="true">⚙</span>
-          <?= e(t('Settings')) ?>
-        </a>
-        <a href="../auth/student_logout.php" class="pp-logout">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          <?= e(t('Logout')) ?>
-        </a>
-      </div>
-    </div>
   </div>
 </header>
 <main class="stud-main">
   <?php if (!empty($_GET['flash'])): ?><div class="flash"><?= e(t($_GET['flash'])) ?></div><?php endif; ?>
-  <div class="card hist-card">
-    <h2><?= e(t('My Borrowing Request History')) ?></h2>
-    <div class="table-wrap">
-      <table class="data-table hist">
-        <thead>
-          <tr><th><?= e(t('ID')) ?></th><th><?= e(t('Date & Time')) ?></th><th><?= e(t('Equipment')) ?></th><th><?= e(t('Serial No.')) ?></th><th><?= e(t('Quantity')) ?></th><th><?= e(t('Classroom')) ?></th><th><?= e(t('Teacher')) ?></th><th><?= e(t('Purpose')) ?></th><th><?= e(t('Status')) ?></th><th><?= e(t('Action')) ?></th></tr>
-        </thead>
-        <tbody>
-        <?php foreach ($rows as $r):
-          $dt = $r['returned_at'] ?: $r['approved_at'] ?: $r['requested_at']; ?>
-          <tr>
-            <td>#<?= (int)$r['id'] ?></td>
-            <td><?= e(date('M d, Y h:i A', strtotime($dt))) ?></td>
-            <td><?= e($r['equipment_name']) ?></td>
-            <td><?= e($r['serial_number']) ?></td>
-            <td><?= (int)($r['quantity'] ?? 1) ?></td>
-            <td><?= e($r['classroom']) ?></td>
-            <td><?= e($r['teacher']) ?></td>
-            <td><?= e($r['purpose']) ?></td>
-            <td><span class="status <?= e($r['status']) ?>"><?= e(t(ucfirst($r['status']))) ?></span></td>
-            <td>
-              <?php if ($r['status'] === 'pending'): ?>
-                <a class="btn-cancel" href="actions.php?do=cancel&id=<?= (int)$r['id'] ?>"
-                   onclick="return confirm(<?= e(json_encode(t('Cancel this pending request?'))) ?>)"><?= e(t('Cancel')) ?></a>
-              <?php else: ?>
-                <span class="muted">—</span>
-              <?php endif; ?>
-            </td>
-          </tr>
-        <?php endforeach; ?>
-        <?php if (empty($rows)): ?><tr><td colspan="10" class="empty"><?= e(t('No requests yet.')) ?></td></tr><?php endif; ?>
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <form method="get" class="student-history-search" role="search">
+    <label class="student-history-search-label" for="historySearch"><?= e(t('Search borrow history')) ?></label>
+    <input type="search" id="historySearch" name="q" value="<?= e($search) ?>"
+           placeholder="<?= e(t('Search')) ?>" aria-label="<?= e(t('Search borrow history')) ?>">
+  </form>
+  <section class="student-history-records" aria-label="<?= e(t('My Borrow History')) ?>">
+    <?php if (empty($rows)): ?>
+      <p class="student-history-empty">
+        <?= e($search === '' ? t('No requests yet.') : t('No history records match your search.')) ?>
+      </p>
+    <?php else: foreach ($rows as $r):
+      $dt = $r['returned_at'] ?: $r['approved_at'] ?: $r['requested_at']; ?>
+      <details class="student-history-record">
+        <summary class="student-history-record-summary">
+          <div class="student-history-record-meta">
+            <p><strong><?= e(t('ID')) ?>:</strong> #<?= (int)$r['id'] ?></p>
+            <time datetime="<?= e(date(DATE_ATOM, strtotime($dt))) ?>">
+              <strong><?= e(t('Date & Time')) ?>:</strong> <?= e(date('M d, Y h:i A', strtotime($dt))) ?>
+            </time>
+          </div>
+          <div class="student-history-record-summary-actions">
+            <span class="status <?= e($r['status']) ?>"><?= e(t(ucfirst($r['status']))) ?></span>
+            <svg class="student-history-record-chevron" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6"></path>
+            </svg>
+          </div>
+        </summary>
+        <div class="student-history-record-details">
+          <div class="student-history-record-main">
+            <div class="student-history-record-fields">
+              <div class="student-history-record-field">
+                <span><?= e(t('Equipment')) ?></span>
+                <strong><?= e($r['equipment_name']) ?></strong>
+              </div>
+              <div class="student-history-record-field">
+                <span><?= e(t('Classroom')) ?></span>
+                <strong><?= e($r['classroom']) ?></strong>
+              </div>
+              <div class="student-history-record-field">
+                <span><?= e(t('Quantity')) ?></span>
+                <strong><?= (int)($r['quantity'] ?? 1) ?></strong>
+              </div>
+              <div class="student-history-record-field">
+                <span><?= e(t('Teacher')) ?></span>
+                <strong><?= e($r['teacher']) ?></strong>
+              </div>
+            </div>
+          </div>
+          <div class="student-history-record-purpose">
+            <strong><?= e(t('Purpose')) ?></strong>
+            <p><?= e($r['purpose']) ?></p>
+          </div>
+          <?php if ($r['status'] === 'pending'): ?>
+            <div class="student-history-record-actions">
+              <a class="btn-cancel" href="actions.php?do=cancel&id=<?= (int)$r['id'] ?>"
+                 onclick="return confirm(<?= e(json_encode(t('Cancel this pending request?'))) ?>)"><?= e(t('Cancel')) ?></a>
+            </div>
+          <?php endif; ?>
+        </div>
+      </details>
+    <?php endforeach; endif; ?>
+  </section>
+  <?php if ($totalPages > 1): ?>
+    <nav class="student-history-pagination" aria-label="<?= e(t('History pages')) ?>">
+      <?php if ($page > 1): ?>
+        <a href="?<?= e(http_build_query($paginationQuery + ['page' => $page - 1])) ?>"><?= e(t('Previous')) ?></a>
+      <?php endif; ?>
+      <span aria-current="page"><?= e(t_format('Page {page} of {total}', ['page' => (string)$page, 'total' => (string)$totalPages])) ?></span>
+      <?php if ($page < $totalPages): ?>
+        <a href="?<?= e(http_build_query($paginationQuery + ['page' => $page + 1])) ?>"><?= e(t('Next')) ?></a>
+      <?php endif; ?>
+    </nav>
+  <?php endif; ?>
 </main>
-<script src="../assets/js/student.js?v=13"></script>
+<script src="../assets/js/student.js?v=19"></script>
 </body>
 </html>
