@@ -48,10 +48,30 @@ class User
         return $u;
     }
 
-    /** Strict student ID format: e.g. C24-01-1524-MAN121  */
+    /**
+     * Validates Student ID (e.g. C24-01-1524-MAN121) or Faculty ID (e.g. FAC-001).
+     */
+    public static function isValidBorrowerId(string $id): bool
+    {
+        if (preg_match('/^C\d{2}-\d{2}-\d{4}-MAN\d{3}$/i', $id)) {
+            return true;
+        }
+        if (preg_match('/^(FAC|FACULTY|PROF|INST)-[A-Z0-9-]{2,20}$/i', $id)) {
+            return true;
+        }
+        return false;
+    }
+
     public static function isValidStudentId(string $id): bool
     {
-        return (bool) preg_match('/^C\d{2}-\d{2}-\d{4}-MAN\d{3}$/', $id);
+        return self::isValidBorrowerId($id);
+    }
+
+    public static function isFaculty(array $user): bool
+    {
+        $uid = strtoupper((string)($user['user_id'] ?? ''));
+        $course = strtoupper((string)($user['course'] ?? ''));
+        return str_starts_with($uid, 'FAC') || str_contains($course, 'FACULTY');
     }
 
     public static function requireLogin(string $role): array
