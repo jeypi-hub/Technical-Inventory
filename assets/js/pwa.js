@@ -16,6 +16,7 @@ installHelp.setAttribute('aria-live', 'polite');
 installHelp.hidden = true;
 document.body.append(installButton, installHelp);
 if (document.querySelector('.sidebar')) document.body.classList.add('has-admin-nav');
+if (document.querySelector('.stud-topbar .stud-right')) document.body.classList.add('has-student-nav');
 
 const isStandalone = window.matchMedia('(display-mode: standalone)').matches
   || window.navigator.standalone === true;

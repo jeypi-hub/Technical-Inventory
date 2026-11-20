@@ -19,10 +19,10 @@ $flash = $_GET['flash'] ?? '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('Student Dashboard')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=25">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=27">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
-<body>
+<body class="has-student-nav">
 <header class="stud-topbar">
   <div class="stud-brand">
     <img src="../assets/images/aclc_logo.png" alt="ACLC" class="brand-logo">
@@ -45,11 +45,14 @@ $flash = $_GET['flash'] ?? '';
         <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
       <?php else: foreach ($notifs as $n): ?>
         <div class="notif-item <?= $n['is_read']?'':'unread' ?>">
-          <span class="ni-type <?= e($n['type']) ?>"></span>
-          <div>
+          <span class="ni-type <?= e($n['type']) ?>" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+          </span>
+          <div class="notif-copy">
             <p><?= e(t_notification($n['message'])) ?></p>
             <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
           </div>
+          <?php if (!$n['is_read']): ?><span class="notif-unread-dot" aria-hidden="true"></span><?php endif; ?>
         </div>
       <?php endforeach; endif; ?>
     </div>

@@ -133,6 +133,18 @@
   .pwa-install-help { right: 14px; }
   .has-admin-nav .pwa-install-button { bottom: calc(78px + env(safe-area-inset-bottom)); }
   .has-admin-nav .pwa-install-help { bottom: calc(136px + env(safe-area-inset-bottom)); }
+  .has-student-nav .pwa-install-button { bottom: calc(104px + env(safe-area-inset-bottom)); }
+  .has-student-nav .pwa-install-help { bottom: calc(162px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 480px) {
+  .has-student-nav .pwa-install-button { bottom: calc(104px + env(safe-area-inset-bottom)); }
+  .has-student-nav .pwa-install-help { bottom: calc(162px + env(safe-area-inset-bottom)); }
+}
+
+@media (max-width: 360px) {
+  .has-student-nav .pwa-install-button { bottom: calc(98px + env(safe-area-inset-bottom)); }
+  .has-student-nav .pwa-install-help { bottom: calc(156px + env(safe-area-inset-bottom)); }
 }
 
 @media (max-width: 420px) {
