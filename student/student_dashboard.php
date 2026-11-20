@@ -166,7 +166,7 @@ $flash = $_GET['flash'] ?? '';
           <?php endif; ?>
           <span class="image-status-pill status-pill-<?= e($st) ?>"><?= e(t(ucfirst($st))) ?></span>
           <span class="image-stock"><?= e(str_replace('{count}', (string)$availableCount, t('{count} available'))) ?></span>
-          <span class="image-name"><?= e($it['name']) ?> <small class="image-serial">(<?= e($it['serial_number']) ?>)</small></span>
+          <span class="image-name"><?= e($it['name']) ?></span>
           <span class="image-hint"><?= e(t('Click to view')) ?></span>
         </button>
       </article>
@@ -225,7 +225,13 @@ $flash = $_GET['flash'] ?? '';
         <span><?= e(t('Scanned Code')) ?></span>
         <strong id="headerScannerSerial"></strong>
       </div>
-      <button type="button" class="btn-primary qr-retry" id="retryHeaderScanner" hidden><?= e(t('Try camera again')) ?></button>
+      <div class="qr-scanner-actions">
+        <button type="button" class="btn-primary qr-retry" id="retryHeaderScanner" hidden><?= e(t('Try camera again')) ?></button>
+        <label class="btn-secondary qr-photo-btn" for="qrImageFileInput">
+          📷 <?= e(t('Scan from Photo / Camera App')) ?>
+          <input type="file" id="qrImageFileInput" accept="image/*" capture="environment" hidden>
+        </label>
+      </div>
 
       <form class="manual-qr-form" id="manualQrForm" method="post" action="actions.php">
         <input type="hidden" name="do" value="scan_qr">
@@ -238,6 +244,7 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </div>
 </dialog>
-<script src="../assets/js/student.js?v=23"></script>
+<script src="../assets/js/jsqr.min.js?v=1"></script>
+<script src="../assets/js/student.js?v=26"></script>
 </body>
 </html>

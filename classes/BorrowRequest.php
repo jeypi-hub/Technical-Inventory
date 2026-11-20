@@ -13,6 +13,11 @@ class BorrowRequest
      */
     public const VALID_DURATIONS = [30, 60, 90, 120, 150, 180, 210, 240];
 
+    /**
+     * Time window (in seconds) for a borrower to scan the Staff QR code after approval (10 minutes).
+     */
+    public const PICKUP_EXPIRY_SECONDS = 600;
+
     private static bool $syncedInRequest = false;
 
     public static function durationOptions(): array
@@ -187,6 +192,70 @@ class BorrowRequest
                     self::notifyManagement(
                         'overdue',
                         "Borrowed item {$locked['equipment_name']} (Request #{$reqId}) is now OVERDUE.",
+                        $reqId
+                    );
+                } catch (Throwable $inner) {
+                    if ($ownsTx && $pdo->inTransaction()) {
+                        $pdo->rollBack();
+                    }
+                }
+            }
+            // 3. Check for approved requests where QR code was not scanned within 10 minutes (600 seconds) -> auto-expire & release back to AVAILABLE
+            $expiredPickupStmt = $pdo->query(
+                "SELECT br.*, e.name AS equipment_name
+                 FROM borrow_requests br
+                 JOIN equipment e ON e.id = br.equipment_id
+                 WHERE br.status = 'approved'
+                   AND br.borrowed_at IS NULL
+                   AND br.approved_at IS NOT NULL
+                   AND TIMESTAMPDIFF(SECOND, br.approved_at, NOW()) >= " . (int)self::PICKUP_EXPIRY_SECONDS
+            );
+            $expiredPickups = $expiredPickupStmt ? $expiredPickupStmt->fetchAll() : [];
+
+            foreach ($expiredPickups as $req) {
+                $reqId = (int)$req['id'];
+                $ownsTx = !$pdo->inTransaction();
+                if ($ownsTx) {
+                    $pdo->beginTransaction();
+                }
+                try {
+                    $locked = self::findForUpdate($pdo, $reqId);
+                    if (!$locked || $locked['status'] !== 'approved' || !empty($locked['borrowed_at'])) {
+                        if ($ownsTx) $pdo->commit();
+                        continue;
+                    }
+                    $upd = $pdo->prepare(
+                        "UPDATE borrow_requests
+                         SET status = 'rejected', qr_token = NULL
+                         WHERE id = ? AND status = 'approved' AND borrowed_at IS NULL"
+                    );
+                    $upd->execute([$reqId]);
+                    if ($upd->rowCount() === 1) {
+                        $reservedIds = self::parseReservedIds($locked['reserved_equipment_ids'] ?? null, (int)$locked['equipment_id']);
+                        Equipment::updateUnitsStatus(
+                            $reservedIds,
+                            'available',
+                            (int)$locked['equipment_id'],
+                            max(1, (int)($locked['quantity'] ?? 1)),
+                            ['pending']
+                        );
+                        AuditLog::record('borrow.pickup_expired', 'borrow_request', (string)$reqId, [
+                            'equipment' => $locked['equipment_name'],
+                            'reason' => 'QR code not scanned within 10 minutes after approval',
+                        ]);
+                    }
+                    if ($ownsTx) {
+                        $pdo->commit();
+                    }
+                    Notification::push(
+                        (int)$locked['user_id'],
+                        'rejected',
+                        "Your approved request #{$reqId} for {$locked['equipment_name']} expired because the QR code was not scanned within 10 minutes. The item has been returned to Available.",
+                        $reqId
+                    );
+                    self::notifyManagement(
+                        'rejected',
+                        "Approved request #{$reqId} ({$locked['equipment_name']}) expired after 10 minutes without a QR scan and was returned to Available.",
                         $reqId
                     );
                 } catch (Throwable $inner) {
@@ -447,7 +516,7 @@ class BorrowRequest
         Notification::push(
             (int)$req['user_id'],
             'approved',
-            "Your request #{$id} for {$quantity} {$req['equipment_name']} item(s) was approved. Go to the Technical Department and scan the QR code to start your borrow timer.",
+            "Your request #{$id} for {$quantity} {$req['equipment_name']} item(s) was approved. Go to the Technical Department and scan the QR code within 10 minutes to start your borrow timer.",
             $id
         );
         Mailer::notifyDecision((int)$req['user_id'], 'approved', $req);

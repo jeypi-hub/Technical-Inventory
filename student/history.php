@@ -169,8 +169,13 @@ $unread = Notification::unreadCount((int)$user['id']);
                 <strong>
                   <?php if ($st === 'pending'): ?>
                     <?= e(t('Waiting for Staff Approval')) ?>
-                  <?php elseif ($st === 'approved'): ?>
-                    <span class="timer-badge awaiting-scan"><?= e(t('Approved — Scan QR at Tech Dept')) ?></span>
+                  <?php elseif ($st === 'approved'):
+                    $pickupExpiresTs = strtotime($r['approved_at'] ?? 'now') + BorrowRequest::PICKUP_EXPIRY_SECONDS;
+                  ?>
+                    <span class="timer-badge awaiting-scan"
+                          data-pickup-expires-at="<?= e(date('c', $pickupExpiresTs)) ?>">
+                      <?= e(t('Scan QR within 10m (by')) ?> <?= e(date('h:i A', $pickupExpiresTs)) ?>)
+                    </span>
                   <?php elseif (in_array($st, ['borrowed', 'overdue'], true) && !empty($r['due_at'])): ?>
                     <span class="timer-badge <?= $st === 'overdue' ? 'is-overdue' : 'is-running' ?>"
                           data-due-at="<?= e(date('c', strtotime($r['due_at']))) ?>"
