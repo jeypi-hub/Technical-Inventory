@@ -5,6 +5,7 @@ require_once __DIR__ . '/Notification.php';
 require_once __DIR__ . '/Mailer.php';
 require_once __DIR__ . '/AuditLog.php';
 
+
 class BorrowRequest
 {
     public static function create(int $userId, int $equipmentId, int $quantity, string $purpose, string $classroom, string $teacher): int
