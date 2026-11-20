@@ -32,8 +32,8 @@ $paginationQuery = array_filter(['action' => $action, 'q' => $search], static fn
 <head>
 <meta charset="UTF-8">
 <title><?= e(t('Audit Trail')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=8">
-<link rel="stylesheet" href="../assets/css/history.css?v=14">
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=16">
+<link rel="stylesheet" href="../assets/css/history.css?v=26">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>

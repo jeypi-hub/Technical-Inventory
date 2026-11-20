@@ -1,16 +1,42 @@
-
 const translate = window.appTranslate || (key => key);
 
+function closeNotifications() {
+  const panel = document.getElementById('notifPanel');
+  panel?.classList.remove('show');
+  panel?.setAttribute('aria-hidden', 'true');
+  document.querySelector('.notif-btn')?.setAttribute('aria-expanded', 'false');
+}
+
+function updateNotificationViewBounds() {
+  const main = document.querySelector('.main');
+  const header = document.querySelector('.stud-topbar');
+  if (!main || !header) return;
+  main.style.setProperty('--notification-top', `${header.getBoundingClientRect().bottom + 6}px`);
+}
+
 function toggleNotif() {
-  document.getElementById('notifPanel')?.classList.toggle('show');
-  document.getElementById('profilePanel')?.classList.remove('show');
+  const panel = document.getElementById('notifPanel');
+  const isOpen = panel?.classList.toggle('show') ?? false;
+  panel?.setAttribute('aria-hidden', String(!isOpen));
+  document.querySelector('.notif-btn')?.setAttribute('aria-expanded', String(isOpen));
+  if (isOpen) {
+    updateNotificationViewBounds();
+    document.getElementById('profilePanel')?.classList.remove('show');
+  }
 }
 function toggleProfile() {
-  document.getElementById('profilePanel')?.classList.toggle('show');
-  document.getElementById('notifPanel')?.classList.remove('show');
+  const panel = document.getElementById('profilePanel');
+  const isOpen = panel?.classList.toggle('show') ?? false;
+  document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', String(isOpen));
+  closeNotifications();
 }
+window.addEventListener('resize', () => {
+  if (document.getElementById('notifPanel')?.classList.contains('show')) {
+    updateNotificationViewBounds();
+  }
+});
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.notif'))   document.getElementById('notifPanel')?.classList.remove('show');
+  if (!e.target.closest('.notif') && !e.target.closest('#notifPanel')) closeNotifications();
   if (!e.target.closest('.profile')) document.getElementById('profilePanel')?.classList.remove('show');
 });
 
@@ -34,6 +60,47 @@ document.querySelectorAll('.condition-choices button').forEach(btn => {
     if (res.ok) location.reload();
   });
 });
+
+// QR Code Modal for Approved Requests
+const qrDisplayModal = document.getElementById('qrDisplayModal');
+function openQrModal(btn) {
+  if (!qrDisplayModal || !btn?.dataset.qr) return;
+  const payload = JSON.parse(btn.dataset.qr);
+  const svgContainer = document.getElementById('qrModalSvgContainer');
+  const tokenText = document.getElementById('qrModalTokenText');
+  const detailsText = document.getElementById('qrModalDetailsText');
+
+  if (svgContainer && typeof window.generateQrSvg === 'function') {
+    svgContainer.innerHTML = window.generateQrSvg(payload.qr_token, 230);
+  }
+  if (tokenText) {
+    tokenText.textContent = payload.qr_token;
+  }
+  if (detailsText) {
+    detailsText.textContent = `${payload.equipment_name} (${payload.serial_number}) × ${payload.quantity} · ${payload.student_name} (${payload.student_uid}) · Duration: ${payload.duration_label}`;
+  }
+  qrDisplayModal.classList.add('show');
+  qrDisplayModal.setAttribute('aria-hidden', 'false');
+}
+
+function closeQrModal() {
+  if (!qrDisplayModal) return;
+  qrDisplayModal.classList.remove('show');
+  qrDisplayModal.setAttribute('aria-hidden', 'true');
+}
+
+qrDisplayModal?.addEventListener('click', (event) => {
+  if (event.target === qrDisplayModal) closeQrModal();
+});
+
+// Automatically pop open the QR modal if staff just approved a request (?qr_id=...)
+const autoOpenQrBtn = document.querySelector('button[data-auto-open="1"]');
+if (autoOpenQrBtn) {
+  openQrModal(autoOpenQrBtn);
+  const cleanUrl = new URL(window.location.href);
+  cleanUrl.searchParams.delete('qr_id');
+  window.history.replaceState(null, '', `${cleanUrl.pathname}${cleanUrl.search}${cleanUrl.hash}`);
+}
 
 const dz  = document.getElementById('dropzone');
 const inp = document.getElementById('imageInput');
@@ -128,9 +195,7 @@ document.querySelectorAll('.equipment-tile').forEach(tile => {
     catalogModalImage.append(shade, availability, title);
     catalogModal.setAttribute('aria-labelledby', title.id);
 
-    catalogModalStatus.textContent = group.available === group.quantity
-      ? translate('Available')
-      : group.available > 0 ? translate('Partially available') : translate('Unavailable');
+    catalogModalStatus.textContent = `Available: ${group.available} · Pending: ${group.pending || 0} · Borrowed: ${group.borrowed || 0} · Overdue: ${group.overdue || 0} · Lost: ${group.lost || 0}`;
 
     catalogModalItems.replaceChildren();
     group.items.forEach(item => {
@@ -174,17 +239,49 @@ document.addEventListener('keydown', event => {
   if (event.key === 'Escape') {
     closeCatalogModal();
     closeEquipmentAddModal();
+    closeQrModal();
   }
 });
 
+// Live countdown for Active Checkouts in Staff/Admin portal
+function updateAdminTimers() {
+  const timers = document.querySelectorAll('.checkout-timer[data-due-at]');
+  if (!timers.length) return;
+  const now = Date.now();
+  timers.forEach((el) => {
+    const dueTime = new Date(el.dataset.dueAt).getTime();
+    if (Number.isNaN(dueTime)) return;
+    const diffSec = Math.floor((dueTime - now) / 1000);
+    if (diffSec > 0) {
+      const hrs = Math.floor(diffSec / 3600);
+      const mins = Math.floor((diffSec % 3600) / 60);
+      const secs = diffSec % 60;
+      el.textContent = hrs > 0
+        ? `Time left: ${hrs}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`
+        : `Time left: ${mins}m ${String(secs).padStart(2, '0')}s`;
+    } else {
+      const overSec = Math.abs(diffSec);
+      const hrs = Math.floor(overSec / 3600);
+      const mins = Math.floor((overSec % 3600) / 60);
+      el.textContent = hrs > 0 ? `OVERDUE by ${hrs}h ${mins}m` : `OVERDUE by ${mins}m`;
+      el.closest('.active-row')?.classList.add('overdue-row');
+    }
+  });
+}
+if (document.querySelector('.checkout-timer[data-due-at]')) {
+  updateAdminTimers();
+  window.setInterval(updateAdminTimers, 1000);
+}
+
 setInterval(() => {
   const isModalOpen = document.getElementById('returnModal')?.classList.contains('show');
+  const isQrModalOpen = qrDisplayModal?.classList.contains('show');
   const isCatalogModalOpen = catalogModal?.classList.contains('show');
   const isAddEquipmentModalOpen = addEquipmentModal?.classList.contains('show');
   const isNotifOpen = document.getElementById('notifPanel')?.classList.contains('show');
   const isProfileOpen = document.getElementById('profilePanel')?.classList.contains('show');
   
-  if (!isModalOpen && !isCatalogModalOpen && !isAddEquipmentModalOpen && !isNotifOpen && !isProfileOpen) {
+  if (!isModalOpen && !isQrModalOpen && !isCatalogModalOpen && !isAddEquipmentModalOpen && !isNotifOpen && !isProfileOpen) {
     location.reload();
   }
 }, 60000);

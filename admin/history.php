@@ -13,8 +13,8 @@ $pageTitle = 'History';
 <head>
 <meta charset="UTF-8">
 <title><?= e(t('History Log')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=12">
-<link rel="stylesheet" href="../assets/css/history.css?v=14">
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=16">
+<link rel="stylesheet" href="../assets/css/history.css?v=26">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
@@ -41,14 +41,25 @@ $pageTitle = 'History';
         <table class="data-table hist">
           <thead>
             <tr>
-              <th><?= e(t('ID')) ?></th><th><?= e(t('Date & Time')) ?></th><th><?= e(t('Student / ID / Course')) ?></th>
-              <th><?= e(t('Equipment & Serial No.')) ?></th><th><?= e(t('Quantity')) ?></th><th><?= e(t('Classroom')) ?></th><th><?= e(t('Teacher')) ?></th>
-              <th><?= e(t('Purpose')) ?></th><th><?= e(t('Status')) ?></th>
+              <th><?= e(t('ID')) ?></th>
+              <th><?= e(t('Date & Time')) ?></th>
+              <th><?= e(t('Borrower / ID / Dept')) ?></th>
+              <th><?= e(t('Equipment & Serial No.')) ?></th>
+              <th><?= e(t('Quantity')) ?></th>
+              <th><?= e(t('Duration')) ?></th>
+              <th><?= e(t('Due / Returned')) ?></th>
+              <th><?= e(t('Classroom')) ?></th>
+              <th><?= e(t('Teacher')) ?></th>
+              <th><?= e(t('Purpose')) ?></th>
+              <th><?= e(t('Status')) ?></th>
             </tr>
           </thead>
           <tbody>
           <?php foreach ($rows as $i => $r):
-            $dt = $r['returned_at'] ?: $r['approved_at'] ?: $r['requested_at']; ?>
+            $dt = $r['returned_at'] ?: $r['borrowed_at'] ?: $r['approved_at'] ?: $r['requested_at'];
+            $durLabel = BorrowRequest::formatDuration((int)($r['duration_minutes'] ?? 60));
+            $st = $r['status'];
+          ?>
             <tr>
               <td>#<?= (int)$r['id'] ?></td>
               <td><?= e(date('M d, Y h:i A', strtotime($dt))) ?></td>
@@ -59,14 +70,32 @@ $pageTitle = 'History';
               </td>
               <td><?= e($r['equipment_name']) ?> [<?= e($r['serial_number']) ?>]</td>
               <td><?= (int)($r['quantity'] ?? 1) ?></td>
+              <td><strong><?= e($durLabel) ?></strong></td>
+              <td>
+                <?php if (!empty($r['returned_at'])): ?>
+                  <small><?= e(t('Returned:')) ?> <?= e(date('M d, h:i A', strtotime($r['returned_at']))) ?></small>
+                <?php elseif (!empty($r['due_at'])): ?>
+                  <small><?= e(t('Due:')) ?> <?= e(date('M d, h:i A', strtotime($r['due_at']))) ?></small>
+                <?php elseif ($st === 'approved'): ?>
+                  <small><?= e(t('Awaiting QR Scan')) ?></small>
+                <?php else: ?>
+                  <span class="muted">—</span>
+                <?php endif; ?>
+              </td>
               <td><?= e($r['classroom']) ?></td>
               <td><?= e($r['teacher']) ?></td>
               <td><?= e($r['purpose']) ?></td>
-              <td><span class="status <?= e($r['status']) ?>"><?= e(t(ucfirst($r['status']))) ?></span></td>
+              <td>
+                <?php if ($st === 'approved'): ?>
+                  <span class="status pending"><?= e(t('Pending (QR Ready)')) ?></span>
+                <?php else: ?>
+                  <span class="status <?= e($st) ?>"><?= e(t(ucfirst($st))) ?></span>
+                <?php endif; ?>
+              </td>
             </tr>
           <?php endforeach; ?>
           <?php if (empty($rows)): ?>
-            <tr><td colspan="9" class="empty"><?= e(t('No history yet.')) ?></td></tr>
+            <tr><td colspan="11" class="empty"><?= e(t('No history yet.')) ?></td></tr>
           <?php endif; ?>
           </tbody>
         </table>
@@ -74,6 +103,6 @@ $pageTitle = 'History';
     </section>
   </main>
 </div>
-<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/admin.js?v=15"></script>
 </body>
 </html>

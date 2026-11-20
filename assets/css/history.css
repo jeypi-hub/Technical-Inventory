@@ -94,8 +94,34 @@
 
 .status.pending { background: #fef3c7; color: #b45309; }
 .status.approved { background: #d1fae5; color: #065f46; }
+.status.borrowed { background: #dbeafe; color: #1e40af; }
+.status.overdue { background: #ffedd5; color: #c2410c; }
 .status.returned { background: #e0e7ff; color: #3730a3; }
-.status.rejected, .status.lost { background: #fee2e2; color: #991b1b; }
+.status.rejected, .status.lost, .status.broken { background: #fee2e2; color: #991b1b; }
+
+.timer-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.timer-badge.awaiting-scan { background: #eef2ff; color: #3730a3; }
+.timer-badge.is-running    { background: #dcfce7; color: #15803d; }
+.timer-badge.is-overdue    { background: #fee2e2; color: #b91c1c; }
+
+.btn-scan-action {
+  display: inline-block;
+  padding: 6px 14px;
+  border-radius: 20px;
+  background: var(--blue-800);
+  color: #fff !important;
+  font-weight: 700;
+  font-size: 12px;
+  text-decoration: none;
+  transition: transform .15s;
+}
+.btn-scan-action:hover { transform: scale(1.05); }
 
 .btn-cancel {
   display: inline-block; 

@@ -13,8 +13,13 @@ switch ($do) {
         $purpose = trim($_POST['purpose'] ?? '');
         $classroom = trim($_POST['classroom'] ?? '');
         $teacher = trim($_POST['teacher'] ?? '');
+        $durationMinutes = (int)($_POST['duration_minutes'] ?? 60);
         $equipmentIds = $_POST['equipment_id'] ?? [];
         $quantities = $_POST['quantity'] ?? [];
+
+        if (!in_array($durationMinutes, BorrowRequest::VALID_DURATIONS, true)) {
+            header('Location: student_dashboard.php?flash=' . urlencode(t('Please select a valid borrow duration (30 mins up to 4 hours).'))); exit;
+        }
         if ($purpose === '' || $classroom === '' || $teacher === '' ||
             !is_array($equipmentIds) || !is_array($quantities) ||
             count($equipmentIds) === 0 || count($equipmentIds) !== count($quantities)) {
@@ -61,15 +66,16 @@ switch ($do) {
                     $item['quantity'],
                     $purpose,
                     $classroom,
-                    $teacher
+                    $teacher,
+                    $durationMinutes
                 );
             }
             $pdo->commit();
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            throw $e;
+            header('Location: student_dashboard.php?flash=' . urlencode(t('Could not reserve items: insufficient available stock'))); exit;
         }
-        header('Location: student_dashboard.php?flash=' . urlencode(t('Borrow request submitted — pending approval'))); exit;
+        header('Location: history.php?flash=' . urlencode(t('Borrow request submitted — item status is now Pending and waiting for Technical Staff approval.'))); exit;
 
     case 'request':
         $equipId    = (int)($_POST['equipment_id'] ?? 0);
@@ -77,6 +83,10 @@ switch ($do) {
         $classroom  = trim($_POST['classroom'] ?? '');
         $teacher    = trim($_POST['teacher']   ?? '');
         $quantity   = (int)($_POST['quantity'] ?? 0);
+        $durationMinutes = (int)($_POST['duration_minutes'] ?? 60);
+        if (!in_array($durationMinutes, BorrowRequest::VALID_DURATIONS, true)) {
+            $durationMinutes = 60;
+        }
         if (!$equipId || !$purpose || !$classroom || !$teacher || $quantity < 1) {
             header('Location: student_dashboard.php?flash=' . urlencode(t('All fields are required'))); exit;
         }
@@ -91,8 +101,19 @@ switch ($do) {
         if ($quantity > $availableCount) {
             header('Location: student_dashboard.php?flash=' . urlencode(t('Requested quantity exceeds available stock'))); exit;
         }
-        BorrowRequest::create((int)$user['id'], $equipId, $quantity, $purpose, $classroom, $teacher);
-        header('Location: student_dashboard.php?flash=' . urlencode(t('Request submitted — pending approval'))); exit;
+        BorrowRequest::create((int)$user['id'], $equipId, $quantity, $purpose, $classroom, $teacher, $durationMinutes);
+        header('Location: history.php?flash=' . urlencode(t('Request submitted — item status is now Pending approval'))); exit;
+
+    case 'scan_qr':
+        $qrToken = trim($_POST['qr_token'] ?? $_GET['qr_token'] ?? '');
+        $isAjax = !empty($_POST['ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json'));
+        $result = BorrowRequest::activateByQrToken($qrToken, (int)$user['id']);
+        if ($isAjax) {
+            json_out($result, $result['ok'] ? 200 : 422);
+        }
+        $target = $result['ok'] ? 'history.php' : 'student_dashboard.php';
+        header('Location: ' . $target . '?flash=' . urlencode($result['message']));
+        exit;
 
     case 'notif_read':
         Notification::markAllRead((int)$user['id']);
@@ -102,7 +123,7 @@ switch ($do) {
         $reqId = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
         $ok    = BorrowRequest::cancel($reqId, (int)$user['id']);
         $back  = $_SERVER['HTTP_REFERER'] ?? 'history.php';
-        $msg   = $ok ? t('Request cancelled.') : t('Cannot cancel — request may already be processed.');
+        $msg   = $ok ? t('Request cancelled and item returned to Available.') : t('Cannot cancel — request may already be processed.');
         $sep   = str_contains($back, '?') ? '&' : '?';
         header('Location: ' . $back . $sep . 'flash=' . urlencode($msg)); exit;
 

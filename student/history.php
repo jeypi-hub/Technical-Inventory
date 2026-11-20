@@ -4,6 +4,8 @@ require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
+$isFaculty = User::isFaculty($user);
+$roleLabel = $isFaculty ? 'Faculty' : 'Student';
 $rows = BorrowRequest::forUser((int)$user['id']);
 $notifs = Notification::forUser((int)$user['id'], 10);
 $unread = Notification::unreadCount((int)$user['id']);
@@ -14,8 +16,8 @@ $unread = Notification::unreadCount((int)$user['id']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('My Borrow History')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=27">
-<link rel="stylesheet" href="../assets/css/history.css?v=24">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=33">
+<link rel="stylesheet" href="../assets/css/history.css?v=26">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
@@ -87,7 +89,7 @@ $unread = Notification::unreadCount((int)$user['id']);
       <div class="profile-panel" id="profilePanel">
         <div class="pp-head">
           <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
+          <span><?= e($user['course']) ?> · <?= e(t($roleLabel)) ?></span>
         </div>
         <a href="../settings.php" class="pp-item">
           <span aria-hidden="true">⚙</span>
@@ -108,37 +110,83 @@ $unread = Notification::unreadCount((int)$user['id']);
     <div class="table-wrap">
       <table class="data-table hist">
         <thead>
-          <tr><th><?= e(t('ID')) ?></th><th><?= e(t('Date & Time')) ?></th><th><?= e(t('Equipment')) ?></th><th><?= e(t('Serial No.')) ?></th><th><?= e(t('Quantity')) ?></th><th><?= e(t('Classroom')) ?></th><th><?= e(t('Teacher')) ?></th><th><?= e(t('Purpose')) ?></th><th><?= e(t('Status')) ?></th><th><?= e(t('Action')) ?></th></tr>
+          <tr>
+            <th><?= e(t('ID')) ?></th>
+            <th><?= e(t('Date & Time')) ?></th>
+            <th><?= e(t('Equipment')) ?></th>
+            <th><?= e(t('Serial No.')) ?></th>
+            <th><?= e(t('Quantity')) ?></th>
+            <th><?= e(t('Duration')) ?></th>
+            <th><?= e(t('Timer / Due Time')) ?></th>
+            <th><?= e(t('Classroom')) ?></th>
+            <th><?= e(t('Teacher')) ?></th>
+            <th><?= e(t('Purpose')) ?></th>
+            <th><?= e(t('Status')) ?></th>
+            <th><?= e(t('Action')) ?></th>
+          </tr>
         </thead>
         <tbody>
         <?php foreach ($rows as $r):
-          $dt = $r['returned_at'] ?: $r['approved_at'] ?: $r['requested_at']; ?>
+          $dt = $r['returned_at'] ?: $r['borrowed_at'] ?: $r['approved_at'] ?: $r['requested_at'];
+          $durLabel = BorrowRequest::formatDuration((int)($r['duration_minutes'] ?? 60));
+          $st = $r['status'];
+        ?>
           <tr>
             <td>#<?= (int)$r['id'] ?></td>
             <td><?= e(date('M d, Y h:i A', strtotime($dt))) ?></td>
             <td><?= e($r['equipment_name']) ?></td>
             <td><?= e($r['serial_number']) ?></td>
             <td><?= (int)($r['quantity'] ?? 1) ?></td>
+            <td><strong><?= e($durLabel) ?></strong></td>
+            <td>
+              <?php if ($st === 'pending'): ?>
+                <span class="muted"><?= e(t('Waiting for Staff Approval')) ?></span>
+              <?php elseif ($st === 'approved'): ?>
+                <span class="timer-badge awaiting-scan"><?= e(t('Approved — Scan QR at Tech Dept')) ?></span>
+              <?php elseif (in_array($st, ['borrowed', 'overdue'], true) && !empty($r['due_at'])): ?>
+                <span class="timer-badge <?= $st === 'overdue' ? 'is-overdue' : 'is-running' ?>"
+                      data-due-at="<?= e(date('c', strtotime($r['due_at']))) ?>"
+                      data-borrowed-at="<?= !empty($r['borrowed_at']) ? e(date('c', strtotime($r['borrowed_at']))) : '' ?>">
+                  <?= e(t('Due:')) ?> <?= e(date('h:i A', strtotime($r['due_at']))) ?>
+                </span>
+              <?php elseif ($st === 'lost'): ?>
+                <span class="timer-badge is-overdue"><?= e(t('Exceeded 24 hrs (Lost)')) ?></span>
+              <?php elseif ($st === 'returned' && !empty($r['returned_at'])): ?>
+                <span class="muted"><?= e(t('Returned')) ?> <?= e(date('h:i A', strtotime($r['returned_at']))) ?></span>
+              <?php else: ?>
+                <span class="muted">—</span>
+              <?php endif; ?>
+            </td>
             <td><?= e($r['classroom']) ?></td>
             <td><?= e($r['teacher']) ?></td>
             <td><?= e($r['purpose']) ?></td>
-            <td><span class="status <?= e($r['status']) ?>"><?= e(t(ucfirst($r['status']))) ?></span></td>
             <td>
-              <?php if ($r['status'] === 'pending'): ?>
+              <?php if ($st === 'approved'): ?>
+                <span class="status pending" title="<?= e(t('Approved by Staff — Item reserved as Pending until QR scan')) ?>">
+                  <?= e(t('Pending (Ready for QR Scan)')) ?>
+                </span>
+              <?php else: ?>
+                <span class="status <?= e($st) ?>"><?= e(t(ucfirst($st))) ?></span>
+              <?php endif; ?>
+            </td>
+            <td>
+              <?php if ($st === 'pending'): ?>
                 <a class="btn-cancel" href="actions.php?do=cancel&id=<?= (int)$r['id'] ?>"
                    onclick="return confirm(<?= e(json_encode(t('Cancel this pending request?'))) ?>)"><?= e(t('Cancel')) ?></a>
+              <?php elseif ($st === 'approved'): ?>
+                <a class="btn-scan-action" href="student_dashboard.php?open=scanner"><?= e(t('Scan QR to Start')) ?></a>
               <?php else: ?>
                 <span class="muted">—</span>
               <?php endif; ?>
             </td>
           </tr>
         <?php endforeach; ?>
-        <?php if (empty($rows)): ?><tr><td colspan="10" class="empty"><?= e(t('No requests yet.')) ?></td></tr><?php endif; ?>
+        <?php if (empty($rows)): ?><tr><td colspan="12" class="empty"><?= e(t('No requests yet.')) ?></td></tr><?php endif; ?>
         </tbody>
       </table>
     </div>
   </div>
 </main>
-<script src="../assets/js/student.js?v=13"></script>
+<script src="../assets/js/student.js?v=19"></script>
 </body>
 </html>

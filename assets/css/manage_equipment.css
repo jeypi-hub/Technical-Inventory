@@ -82,9 +82,10 @@
 .catalog-unit-info .status { align-self: flex-start; margin-top: 2px; padding: 3px 9px; background: #f5f6fa; }
 .status { padding: 4px 12px; border-radius: 20px; font-weight: 700; font-size: 12px; }
 .status.available { color: #16a34a; }
-.status.borrowed  { color: #f59e0b; }
+.status.borrowed  { color: #1d4ed8; }
+.status.overdue   { color: #ea580c; }
 .status.maintenance { color: #dc2626; }
-.status.pending   { color: #6366f1; }
+.status.pending   { color: #d97706; }
 .status.returned  { color: #16a34a; }
 .status.rejected  { color: #dc2626; }
 .status.lost      { color: #dc2626; }

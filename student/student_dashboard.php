@@ -5,10 +5,14 @@ require_once __DIR__ . '/../classes/Equipment.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
+$isFaculty = User::isFaculty($user);
+$roleLabel = $isFaculty ? 'Faculty' : 'Student';
 
 $search = trim($_GET['q'] ?? '');
 $items  = Equipment::all($search ?: null);
 $availableCounts = Equipment::availableCountsByName();
+$statusBreakdown = Equipment::statusBreakdownByName();
+$durationOptions = BorrowRequest::durationOptions();
 $notifs = Notification::forUser((int)$user['id'], 10);
 $unread = Notification::unreadCount((int)$user['id']);
 $flash = $_GET['flash'] ?? '';
@@ -18,8 +22,8 @@ $flash = $_GET['flash'] ?? '';
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= e(t('Student Dashboard')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=31">
+<title><?= e(t($roleLabel . ' Dashboard')) ?> — ACLC</title>
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=33">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body class="has-student-nav">
@@ -67,7 +71,6 @@ $flash = $_GET['flash'] ?? '';
       </svg>
     </button>
     <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
-      <!-- User Avatar Icon -->
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
       <div class="profile-info">
         <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
@@ -76,14 +79,13 @@ $flash = $_GET['flash'] ?? '';
       <div class="profile-panel" id="profilePanel">
         <div class="pp-head">
           <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
+          <span><?= e($user['course']) ?> · <?= e(t($roleLabel)) ?></span>
         </div>
         <a href="../settings.php" class="pp-item">
           <span aria-hidden="true">⚙</span>
           <?= e(t('Settings')) ?>
         </a>
         <a href="../auth/student_logout.php" class="pp-logout">
-          <!-- Logout Icon -->
           <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           <?= e(t('Logout')) ?>
         </a>
@@ -116,33 +118,47 @@ $flash = $_GET['flash'] ?? '';
   <div class="dashboard-content">
   <?php if ($flash): ?><div class="flash"><?= e(t($flash)) ?></div><?php endif; ?>
   <form method="get" class="searchbar wide">
-    <input type="text" name="q" placeholder="<?= e(t('Search')) ?>" value="<?= e($search) ?>">
+    <input type="text" name="q" placeholder="<?= e(t('Search equipment or status...')) ?>" value="<?= e($search) ?>">
     <button type="submit">
-      <!-- Search Magnifying Glass Icon -->
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     </button>
   </form>
 
   <section class="equip-grid">
     <?php foreach ($items as $it):
-      $isAvailable = $it['status'] === 'available';
-      $availableCount = $availableCounts[$it['name']] ?? 0; ?>
-      <article class="equip-card <?= $isAvailable ? '' : 'unavailable' ?>"
-        data-search="<?= e($it['name'] . ' ' . $it['serial_number']) ?>">
+      $st = $it['status'];
+      $isAvailable = $st === 'available';
+      $availableCount = $availableCounts[$it['name']] ?? 0;
+      $bd = $statusBreakdown[$it['name']] ?? [
+          'available' => $availableCount,
+          'pending' => 0,
+          'borrowed' => 0,
+          'overdue' => 0,
+          'lost' => 0,
+      ];
+    ?>
+      <article class="equip-card status-card-<?= e($st) ?> <?= $isAvailable ? '' : 'unavailable' ?>"
+        data-search="<?= e($it['name'] . ' ' . $it['serial_number'] . ' ' . $st) ?>">
         <button type="button" class="equip-img item-open"
           data-id="<?= (int)$it['id'] ?>"
           data-name="<?= e($it['name']) ?>"
+          data-serial="<?= e($it['serial_number']) ?>"
           data-image="<?= !empty($it['image']) ? e('../assets/upload/' . $it['image']) : '' ?>"
-          data-status="<?= e($it['status']) ?>"
-          data-available="<?= $availableCount ?>"
+          data-status="<?= e($st) ?>"
+          data-available="<?= (int)$availableCount ?>"
+          data-pending="<?= (int)($bd['pending'] ?? 0) ?>"
+          data-borrowed="<?= (int)($bd['borrowed'] ?? 0) ?>"
+          data-overdue="<?= (int)($bd['overdue'] ?? 0) ?>"
+          data-lost="<?= (int)($bd['lost'] ?? 0) ?>"
           aria-label="<?= e(t('View details for')) ?> <?= e($it['name']) ?>">
           <?php if (!empty($it['image'])): ?>
             <img src="../assets/upload/<?= e($it['image']) ?>" alt="">
           <?php else: ?>
             <div class="placeholder"></div>
           <?php endif; ?>
+          <span class="image-status-pill status-pill-<?= e($st) ?>"><?= e(t(ucfirst($st))) ?></span>
           <span class="image-stock"><?= e(str_replace('{count}', (string)$availableCount, t('{count} available'))) ?></span>
-          <span class="image-name"><?= e($it['name']) ?></span>
+          <span class="image-name"><?= e($it['name']) ?> <small class="image-serial">(<?= e($it['serial_number']) ?>)</small></span>
           <span class="image-hint"><?= e(t('Click to view')) ?></span>
         </button>
       </article>
@@ -165,11 +181,12 @@ $flash = $_GET['flash'] ?? '';
       </div>
       <div class="detail-side">
         <div class="detail-stat-tile">
-          <span class="detail-label"><?= e(t('Inventory status')) ?></span>
+          <span class="detail-label"><?= e(t('Unit Status & Availability Breakdown')) ?></span>
           <strong id="detailStatus"></strong>
+          <div class="status-breakdown-pills" id="detailStatusBreakdown"></div>
         </div>
         <div class="request-tile" id="requestTile" hidden>
-          <h3><?= e(t('Add this item')) ?></h3>
+          <h3><?= e(t('Reserve & Borrow in Advance')) ?></h3>
           <div class="modal-req-form">
             <input type="number" name="quantity" id="requestQuantity" aria-label="<?= e(t('Quantity')) ?>"
               placeholder="<?= e(t('Quantity')) ?>" min="1" value="1" required>
@@ -177,8 +194,8 @@ $flash = $_GET['flash'] ?? '';
           </div>
         </div>
         <div class="request-tile unavailable-tile" id="unavailableTile" hidden>
-          <strong><?= e(t('This item is currently unavailable.')) ?></strong>
-          <span><?= e(t('Check back later to request it.')) ?></span>
+          <strong id="unavailableTitle"><?= e(t('This unit is currently unavailable.')) ?></strong>
+          <span id="unavailableDesc"><?= e(t('Check back later or select an available unit.')) ?></span>
         </div>
       </div>
     </div>
@@ -189,16 +206,24 @@ $flash = $_GET['flash'] ?? '';
   <div class="item-dialog-panel">
     <button type="button" class="dialog-close" id="closeBorrowCart" aria-label="<?= e(t('Close borrow request')) ?>">&times;</button>
     <div class="cart-content">
-      <h2 id="borrowCartTitle"><?= e(t('Borrow Request')) ?></h2>
-      <p class="cart-intro"><?= e(t('Review your items and submit them together.')) ?></p>
+      <h2 id="borrowCartTitle"><?= e(t('Advance Borrow Request')) ?></h2>
+      <p class="cart-intro"><?= e(t('Submitting reserves the item(s) as Pending until Technical Staff approves and you scan the QR code.')) ?></p>
       <p class="borrow-cart-empty" id="borrowCartEmpty"><?= e(t('No items selected. Add equipment to this request.')) ?></p>
       <ul class="borrow-cart-items" id="borrowCartItems"></ul>
       <form method="post" action="actions.php" class="cart-req-form" id="borrowCartForm">
         <input type="hidden" name="do" value="cart_request">
         <div id="borrowCartHiddenItems"></div>
         <label>
+          <?= e(t('Borrow Duration (30-min intervals, max 4 hours)')) ?>
+          <select name="duration_minutes" id="borrowCartDuration" class="duration-select" required>
+            <?php foreach ($durationOptions as $mins => $label): ?>
+              <option value="<?= (int)$mins ?>" <?= $mins === 60 ? 'selected' : '' ?>><?= e(t($label)) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>
           <?= e(t('Purpose')) ?>
-          <input type="text" id="borrowCartPurpose" name="purpose" placeholder="<?= e(t('e.g. Lab Work')) ?>"
+          <input type="text" id="borrowCartPurpose" name="purpose" placeholder="<?= e(t('e.g. Networking Lab Work')) ?>"
             pattern="[^0-9]+" title="<?= e(t('Numbers are not allowed.')) ?>" required>
         </label>
         <label>
@@ -206,7 +231,7 @@ $flash = $_GET['flash'] ?? '';
           <input type="text" name="classroom" placeholder="<?= e(t('e.g. Lab 5')) ?>" required>
         </label>
         <div class="teacher-autocomplete">
-          <label for="borrowCartTeacher"><?= e(t("Teacher's Name")) ?></label>
+          <label for="borrowCartTeacher"><?= e(t("Teacher's / Instructor's Name")) ?></label>
           <input type="text" id="borrowCartTeacher" name="teacher" placeholder="<?= e(t("Teacher's Name")) ?>"
             pattern="[^0-9]+" title="<?= e(t('Numbers are not allowed.')) ?>"
             aria-autocomplete="list" aria-controls="cartTeacherSuggestions" aria-expanded="false" required>
@@ -223,21 +248,30 @@ $flash = $_GET['flash'] ?? '';
   <div class="item-dialog-panel">
     <button type="button" class="dialog-close" id="closeHeaderScanner" aria-label="<?= e(t('Close QR scanner')) ?>">&times;</button>
     <div class="scanner-dialog-content">
-      <h2 id="headerScannerTitle"><?= e(t('Scan QR code')) ?></h2>
-      <p><?= e(t("Point the camera at an item's QR code to read its serial number.")) ?></p>
+      <h2 id="headerScannerTitle"><?= e(t('Scan Staff Approval QR Code')) ?></h2>
+      <p><?= e(t('Scan the QR code generated by Technical Staff upon approval to start your borrow duration timer.')) ?></p>
       <div class="qr-camera-frame">
         <video id="headerScannerVideo" autoplay muted playsinline></video>
         <div class="qr-scan-guide" aria-hidden="true"></div>
       </div>
       <p class="qr-scanner-status" id="headerScannerStatus" role="status" aria-live="polite"></p>
       <div class="scanner-result" id="headerScannerResult" hidden>
-        <span><?= e(t('Serial number')) ?></span>
+        <span><?= e(t('Scanned Code')) ?></span>
         <strong id="headerScannerSerial"></strong>
       </div>
       <button type="button" class="btn-primary qr-retry" id="retryHeaderScanner" hidden><?= e(t('Try camera again')) ?></button>
+
+      <form class="manual-qr-form" id="manualQrForm" method="post" action="actions.php">
+        <input type="hidden" name="do" value="scan_qr">
+        <label for="manualQrToken"><?= e(t('Or enter the Staff QR Verification Code:')) ?></label>
+        <div class="manual-qr-row">
+          <input type="text" id="manualQrToken" name="qr_token" placeholder="e.g. ACLC-REQ-1-A1B2C3D4" required>
+          <button type="submit" class="btn-primary"><?= e(t('Start Timer')) ?></button>
+        </div>
+      </form>
     </div>
   </div>
 </dialog>
-<script src="../assets/js/student.js?v=17"></script>
+<script src="../assets/js/student.js?v=19"></script>
 </body>
 </html>

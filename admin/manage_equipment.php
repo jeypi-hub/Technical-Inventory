@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/Equipment.php';
+require_once __DIR__ . '/../classes/BorrowRequest.php';
 $user = User::requirePermission('equipment.manage');
 
 $flash = $_GET['flash'] ?? '';
@@ -12,18 +13,31 @@ $groups = [];
 foreach ($items as $item) {
     $name = $item['name'];
     if (!isset($groups[$name])) {
-        $groups[$name] = ['name' => $name, 'image' => null, 'quantity' => 0, 'available' => 0, 'items' => []];
+        $groups[$name] = [
+            'name' => $name,
+            'image' => null,
+            'quantity' => 0,
+            'available' => 0,
+            'pending' => 0,
+            'borrowed' => 0,
+            'overdue' => 0,
+            'lost' => 0,
+            'maintenance' => 0,
+            'items' => [],
+        ];
     }
     $groups[$name]['items'][] = $item;
 }
 foreach ($catalogItems as $item) {
-    if (isset($groups[$item['name']])) {
-        $groups[$item['name']]['quantity']++;
-        if ($item['status'] === 'available') {
-            $groups[$item['name']]['available']++;
+    $name = $item['name'];
+    if (isset($groups[$name])) {
+        $groups[$name]['quantity']++;
+        $st = $item['status'];
+        if (isset($groups[$name][$st])) {
+            $groups[$name][$st]++;
         }
-        if (!$groups[$item['name']]['image'] && !empty($item['image'])) {
-            $groups[$item['name']]['image'] = $item['image'];
+        if (!$groups[$name]['image'] && !empty($item['image'])) {
+            $groups[$name]['image'] = $item['image'];
         }
     }
 }
@@ -34,8 +48,8 @@ $pageTitle = 'Manage Catalog';
 <head>
 <meta charset="UTF-8">
 <title><?= e(t('Manage Catalog')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=12">
-<link rel="stylesheet" href="../assets/css/manage_equipment.css?v=6">
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=16">
+<link rel="stylesheet" href="../assets/css/manage_equipment.css?v=8">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
@@ -70,6 +84,11 @@ $pageTitle = 'Manage Catalog';
                   'image' => $group['image'],
                   'quantity' => $group['quantity'],
                   'available' => $group['available'],
+                  'pending' => $group['pending'],
+                  'borrowed' => $group['borrowed'],
+                  'overdue' => $group['overdue'],
+                  'lost' => $group['lost'],
+                  'maintenance' => $group['maintenance'],
                   'items' => array_map(static function ($item) {
                       return [
                           'id' => (int) $item['id'],
@@ -155,6 +174,6 @@ $pageTitle = 'Manage Catalog';
     </div>
   </main>
 </div>
-<script src="../assets/js/admin.js"></script>
+<script src="../assets/js/admin.js?v=15"></script>
 </body>
 </html>

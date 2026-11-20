@@ -72,7 +72,7 @@ if (searchForm) {
     emptyMessage.className = 'empty';
     emptyMessage.textContent = translate('No equipment matches your search.');
     emptyMessage.hidden = true;
-    document.querySelector('.equip-grid').appendChild(emptyMessage);
+    document.querySelector('.equip-grid')?.appendChild(emptyMessage);
   }
 
   searchInput.addEventListener('input', () => {
@@ -232,8 +232,10 @@ const itemDialog = document.getElementById('itemDialog');
 if (itemDialog) {
   const detailImageTile = document.getElementById('detailImageTile');
   const detailImage = document.getElementById('detailImage');
+  const detailStatusBreakdown = document.getElementById('detailStatusBreakdown');
   const requestTile = document.getElementById('requestTile');
   const unavailableTile = document.getElementById('unavailableTile');
+  const unavailableTitle = document.getElementById('unavailableTitle');
   const requestQuantity = document.getElementById('requestQuantity');
   const addItemToCartButton = document.getElementById('addItemToCart');
   const cartDialog = document.getElementById('borrowCartDialog');
@@ -373,31 +375,64 @@ if (itemDialog) {
 
   document.querySelectorAll('.item-open').forEach((button) => {
     button.addEventListener('click', () => {
-      const available = button.dataset.status === 'available';
+      const unitStatus = button.dataset.status || 'available';
+      const availableCount = Number(button.dataset.available || 0);
+      const canBorrow = unitStatus === 'available' && availableCount > 0;
       const image = button.dataset.image;
       selectedEquipment = {
         id: Number(button.dataset.id),
         name: button.dataset.name,
-        available: Number(button.dataset.available)
+        available: availableCount
       };
 
-      document.getElementById('detailName').textContent = button.dataset.name;
-      document.getElementById('detailStatus').textContent = available ? translate('Available') : translate('Unavailable');
+      const statusLabels = {
+        available: translate('Available'),
+        pending: translate('Pending Approval / Pickup'),
+        borrowed: translate('Borrowed'),
+        overdue: translate('Overdue'),
+        lost: translate('Lost'),
+        maintenance: translate('Under Maintenance')
+      };
+
+      document.getElementById('detailName').textContent = `${button.dataset.name} (${button.dataset.serial || ''})`;
+      document.getElementById('detailStatus').textContent = statusLabels[unitStatus] || unitStatus;
       document.getElementById('detailStock').textContent =
-        translate('{count} available', { count: button.dataset.available });
+        translate('{count} available', { count: availableCount });
+
+      if (detailStatusBreakdown) {
+        detailStatusBreakdown.replaceChildren();
+        const metrics = [
+          { key: 'available', label: 'Available', count: Number(button.dataset.available || 0) },
+          { key: 'pending',   label: 'Pending',   count: Number(button.dataset.pending || 0) },
+          { key: 'borrowed',  label: 'Borrowed',  count: Number(button.dataset.borrowed || 0) },
+          { key: 'overdue',   label: 'Overdue',   count: Number(button.dataset.overdue || 0) },
+          { key: 'lost',      label: 'Lost',      count: Number(button.dataset.lost || 0) },
+        ];
+        metrics.forEach(m => {
+          const pill = document.createElement('span');
+          pill.className = `bd-pill bd-${m.key}`;
+          pill.textContent = `${m.label}: ${m.count}`;
+          detailStatusBreakdown.appendChild(pill);
+        });
+      }
+
+      if (unavailableTitle) {
+        unavailableTitle.textContent = `This unit is currently ${statusLabels[unitStatus] || unitStatus}.`;
+      }
+
       requestQuantity.setCustomValidity('');
       requestQuantity.value = '1';
       syncAddToCartButton();
       detailImageTile.classList.toggle('has-image', Boolean(image));
       detailImage.hidden = !image;
       detailImage.src = image;
-      requestTile.hidden = !available;
-      unavailableTile.hidden = available;
+      requestTile.hidden = !canBorrow;
+      unavailableTile.hidden = canBorrow;
       itemDialog.classList.remove('show-form');
       itemDialog.showModal();
 
       window.clearTimeout(formRevealTimer);
-      if (available) {
+      if (canBorrow) {
         formRevealTimer = window.setTimeout(() => {
           if (itemDialog.open) itemDialog.classList.add('show-form');
         }, 420);
@@ -434,6 +469,7 @@ if (headerScannerDialog) {
   const scannerStatus = document.getElementById('headerScannerStatus');
   const scannerResult = document.getElementById('headerScannerResult');
   const scannerSerial = document.getElementById('headerScannerSerial');
+  const manualQrInput = document.getElementById('manualQrToken');
   let scannerStream = null;
   let scannerDetector = null;
   let scannerTimer;
@@ -455,6 +491,36 @@ if (headerScannerDialog) {
     scannerVideo.srcObject = null;
   };
 
+  const activateScannedToken = async (rawValue) => {
+    setHeaderScannerStatus(translate('Verifying QR code and starting borrow timer…'));
+    try {
+      const fd = new FormData();
+      fd.append('do', 'scan_qr');
+      fd.append('qr_token', rawValue);
+      fd.append('ajax', '1');
+      const res = await fetch('actions.php', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: fd
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setHeaderScannerStatus(data.message || translate('Borrow timer started!'));
+        window.setTimeout(() => {
+          window.location.href = `history.php?flash=${encodeURIComponent(data.message || 'Borrow timer started!')}`;
+        }, 900);
+      } else {
+        setHeaderScannerStatus(data.message || translate('Could not activate QR code.'), true);
+        retryScannerButton.hidden = false;
+      }
+    } catch (err) {
+      if (manualQrInput) {
+        manualQrInput.value = rawValue;
+        document.getElementById('manualQrForm')?.submit();
+      }
+    }
+  };
+
   const scanHeaderFrame = async (run) => {
     if (run !== scannerRun || !scannerStream) return;
 
@@ -464,10 +530,11 @@ if (headerScannerDialog) {
         if (run !== scannerRun) return;
         const code = codes.find((entry) => entry.rawValue.trim());
         if (code) {
-          scannerSerial.textContent = code.rawValue.trim();
+          const val = code.rawValue.trim();
+          scannerSerial.textContent = val;
           scannerResult.hidden = false;
-          setHeaderScannerStatus(translate('QR code scanned.'));
           stopHeaderScanner();
+          await activateScannedToken(val);
           return;
         }
       } catch (error) {
@@ -493,18 +560,18 @@ if (headerScannerDialog) {
     setHeaderScannerStatus(translate('Starting camera…'));
 
     if (!('BarcodeDetector' in window)) {
-      setHeaderScannerStatus(translate('QR scanning is not supported by this browser.'), true);
+      setHeaderScannerStatus(translate('Camera QR detection is unavailable in this browser — enter the Staff QR Code below.'), true);
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
-      setHeaderScannerStatus(translate('Camera access is unavailable in this browser.'), true);
+      setHeaderScannerStatus(translate('Camera access is unavailable — enter the Staff QR Code below.'), true);
       return;
     }
 
     try {
       scannerDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
     } catch (error) {
-      setHeaderScannerStatus(translate('Could not start the QR scanner: {error}', { error: error.message }), true);
+      setHeaderScannerStatus(translate('Could not start the QR scanner — enter the Staff QR Code below.'), true);
       return;
     }
 
@@ -522,29 +589,63 @@ if (headerScannerDialog) {
       scannerVideo.srcObject = stream;
       await scannerVideo.play();
       if (run !== scannerRun) return;
-      setHeaderScannerStatus(translate('Point the camera at an item QR code.'));
+      setHeaderScannerStatus(translate('Point the camera at the QR code generated by Technical Staff.'));
       scanHeaderFrame(run);
     } catch (error) {
       if (run !== scannerRun) return;
       stopHeaderScanner();
       retryScannerButton.hidden = false;
       const message = error.name === 'NotAllowedError'
-        ? translate('Camera access was denied. Allow camera access and try again.')
-        : translate('Could not start the camera: {error}', { error: error.message });
+        ? translate('Camera access was denied. Allow camera access or enter the Staff QR Code below.')
+        : translate('Could not start the camera — enter the Staff QR Code below.');
       setHeaderScannerStatus(message, true);
     }
   };
 
-  openScannerButton.addEventListener('click', () => {
+  openScannerButton?.addEventListener('click', () => {
     closeNotifications();
-    document.getElementById('profilePanel').classList.remove('show');
+    document.getElementById('profilePanel')?.classList.remove('show');
     headerScannerDialog.showModal();
     startHeaderScanner();
   });
-  closeScannerButton.addEventListener('click', () => headerScannerDialog.close());
-  retryScannerButton.addEventListener('click', startHeaderScanner);
+  closeScannerButton?.addEventListener('click', () => headerScannerDialog.close());
+  retryScannerButton?.addEventListener('click', startHeaderScanner);
   headerScannerDialog.addEventListener('cancel', (event) => event.preventDefault());
   headerScannerDialog.addEventListener('close', stopHeaderScanner);
+}
+
+// Live countdown timer for borrowed / overdue items in Borrow History
+function updateLiveTimers() {
+  const badges = document.querySelectorAll('[data-due-at]');
+  if (!badges.length) return;
+  const now = Date.now();
+  badges.forEach((badge) => {
+    const dueTime = new Date(badge.dataset.dueAt).getTime();
+    if (Number.isNaN(dueTime)) return;
+    const diffSec = Math.floor((dueTime - now) / 1000);
+    if (diffSec > 0) {
+      const hrs = Math.floor(diffSec / 3600);
+      const mins = Math.floor((diffSec % 3600) / 60);
+      const secs = diffSec % 60;
+      const timeStr = hrs > 0
+        ? `${hrs}h ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s left`
+        : `${mins}m ${String(secs).padStart(2, '0')}s left`;
+      badge.textContent = timeStr;
+      badge.classList.remove('is-overdue');
+      badge.classList.add('is-running');
+    } else {
+      const overSec = Math.abs(diffSec);
+      const hrs = Math.floor(overSec / 3600);
+      const mins = Math.floor((overSec % 3600) / 60);
+      badge.textContent = hrs > 0 ? `OVERDUE by ${hrs}h ${mins}m` : `OVERDUE by ${mins}m`;
+      badge.classList.remove('is-running');
+      badge.classList.add('is-overdue');
+    }
+  });
+}
+if (document.querySelector('[data-due-at]')) {
+  updateLiveTimers();
+  window.setInterval(updateLiveTimers, 1000);
 }
 
 const dashboardActionUrl = new URL(window.location.href);
