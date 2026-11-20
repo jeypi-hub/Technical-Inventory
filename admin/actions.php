@@ -4,25 +4,28 @@ require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/Equipment.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
-$user = User::requireStaffOrAdmin();
+require_once __DIR__ . '/../classes/AuditLog.php';
+$user = User::requirePermission('operations.manage');
 
 $do = $_GET['do'] ?? $_POST['do'] ?? '';
 
 switch ($do) {
 
     case 'approve':
-        BorrowRequest::approve((int)($_GET['id'] ?? 0));
+        $id = (int)($_GET['id'] ?? 0);
+        BorrowRequest::approve($id);
         header('Location: admin_dashboard.php'); exit;
 
     case 'reject':
-        BorrowRequest::reject((int)($_GET['id'] ?? 0));
+        $id = (int)($_GET['id'] ?? 0);
+        BorrowRequest::reject($id);
         header('Location: admin_dashboard.php'); exit;
 
     case 'mark_return':
         $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
         $condition = $_POST['condition'] ?? $_GET['condition'] ?? 'good';
-        BorrowRequest::markReturn($id, $condition);
-        if (!empty($_POST['id'])) json_out(['ok' => true]);
+        $updated = BorrowRequest::markReturn($id, is_string($condition) ? $condition : '');
+        if (!empty($_POST['id'])) json_out(['ok' => $updated], $updated ? 200 : 409);
         header('Location: admin_dashboard.php'); exit;
 
     case 'add_equipment':
@@ -31,7 +34,7 @@ switch ($do) {
             'options' => ['min_range' => 1],
         ]);
         if ($name === '' || $quantity === false) {
-            header('Location: manage_equipment.php?flash=' . urlencode('Name and a quantity of at least 1 are required'));
+            header('Location: manage_equipment.php?flash=' . urlencode(t('Name and a quantity of at least 1 are required')));
             exit;
         }
         $imageName = null;
@@ -44,15 +47,50 @@ switch ($do) {
                     __DIR__ . '/../assets/upload/' . $imageName);
             }
         }
-        for ($i = 0; $i < $quantity; $i++) {
-            Equipment::create($name, $imageName);
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            $equipmentCount = 0;
+            for ($i = 0; $i < $quantity; $i++) {
+                Equipment::create($name, $imageName);
+                $equipmentCount++;
+            }
+            AuditLog::record('equipment.created', 'equipment_batch', null, [
+                'name' => $name,
+                'quantity' => $equipmentCount,
+            ]);
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
-        $message = $quantity === 1 ? 'Equipment added' : $quantity . ' equipment items added';
+        $message = $quantity === 1 ? t('Equipment added') : $quantity . ' ' . t('equipment items added');
         header('Location: manage_equipment.php?flash=' . urlencode($message)); exit;
 
     case 'delete_equipment':
-        Equipment::delete((int)($_GET['id'] ?? 0));
-        header('Location: manage_equipment.php?flash=Equipment deleted'); exit;
+        $id = (int)($_GET['id'] ?? 0);
+        $equipment = Equipment::find($id);
+        $pdo = db();
+        $pdo->beginTransaction();
+        try {
+            Equipment::delete($id);
+            if ($equipment) {
+                AuditLog::record('equipment.deleted', 'equipment', (string)$id, [
+                    'name' => $equipment['name'],
+                    'serial_number' => $equipment['serial_number'],
+                    'status' => $equipment['status'],
+                ]);
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+        header('Location: manage_equipment.php?flash=' . urlencode(t('Equipment deleted'))); exit;
 
     case 'notif_read':
         Notification::markAllRead((int)$user['id']);
@@ -63,10 +101,11 @@ switch ($do) {
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
         header('Content-Disposition: attachment; filename="history_' . date('Ymd_His') . '.xls"');
         echo "\xEF\xBB\xBF"; // UTF-8 BOM
-        echo "<table border='1'><tr>
-          <th>ID</th><th>Date &amp; Time</th><th>Student</th><th>Student ID</th><th>Course</th>
-          <th>Equipment</th><th>Serial No.</th><th>Quantity</th><th>Classroom</th><th>Teacher</th><th>Purpose</th><th>Status</th>
-        </tr>";
+        echo "<table border='1'><tr>";
+        foreach (['ID', 'Date & Time', 'Student', 'Student ID', 'Course', 'Equipment', 'Serial No.', 'Quantity', 'Classroom', 'Teacher', 'Purpose', 'Status'] as $heading) {
+            echo '<th>' . e(t($heading)) . '</th>';
+        }
+        echo '</tr>';
         foreach ($rows as $r) {
             $dt = $r['returned_at'] ?: $r['approved_at'] ?: $r['requested_at'];
             echo '<tr>';
@@ -81,7 +120,7 @@ switch ($do) {
             echo '<td>' . e($r['classroom']) . '</td>';
             echo '<td>' . e($r['teacher']) . '</td>';
             echo '<td>' . e($r['purpose']) . '</td>';
-            echo '<td>' . e($r['status']) . '</td>';
+            echo '<td>' . e(t(ucfirst($r['status']))) . '</td>';
             echo '</tr>';
         }
         echo '</table>';

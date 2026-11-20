@@ -2,16 +2,16 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
-$user = User::requireStaffOrAdmin();
+$user = User::requirePermission('checkout.manage');
 
 $active = BorrowRequest::active();
 $pageTitle = 'Active Checkouts';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= e(app_language_tag()) ?>" data-theme="<?= e(app_theme()) ?>" data-compact="<?= app_compact_mode() ? '1' : '0' ?>">
 <head>
 <meta charset="UTF-8">
-<title>Active Checkouts — ACLC</title>
+<title><?= e(t('Active Checkouts')) ?> — ACLC</title>
 <link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=12">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
@@ -24,13 +24,13 @@ $pageTitle = 'Active Checkouts';
     <section class="card active-card active-page-card">
       <div class="card-head">
         <div>
-          <h2>Active Checkouts</h2>
-          <p class="muted">Review borrowed equipment and mark returned items.</p>
+          <h2><?= e(t('Active Checkouts')) ?></h2>
+          <p class="muted"><?= e(t('Review borrowed equipment and mark returned items.')) ?></p>
         </div>
       </div>
       <div class="active-list active-page-list">
         <?php if (empty($active)): ?>
-          <div class="empty">No active checkouts.</div>
+          <div class="empty"><?= e(t('No active checkouts.')) ?></div>
         <?php else: foreach ($active as $a):
           $approvalTime = strtotime($a['approved_at'] ?? $a['requested_at']);
           $isOverdue = (time() - $approvalTime) > (2 * 3600);
@@ -38,14 +38,14 @@ $pageTitle = 'Active Checkouts';
           <div class="active-row <?= $isOverdue ? 'overdue-row' : '' ?>">
             <div>
               <strong><?= e($a['equipment_name']) ?></strong>
-              <small>(SN: <?= e($a['serial_number']) ?>)</small>
+              <small>(<?= e(t('SN:')) ?> <?= e($a['serial_number']) ?>)</small>
               <?php if ($isOverdue): ?>
-                <span class="badge-overdue">OVERDUE (&gt; 2 hrs)</span>
+                <span class="badge-overdue"><?= e(t('OVERDUE (> 2 hrs)')) ?></span>
               <?php endif; ?>
-              <p>Borrowed by: <?= e($a['student_name']) ?> (ID: <?= e($a['student_uid']) ?>) · Room: <?= e($a['classroom']) ?></p>
+              <p><?= e(t('Borrowed by:')) ?> <?= e($a['student_name']) ?> (<?= e(t('ID:')) ?> <?= e($a['student_uid']) ?>) · <?= e(t('Room:')) ?> <?= e($a['classroom']) ?></p>
             </div>
             <div class="return-actions">
-              <button class="btn-return" onclick="markReturn(<?= (int)$a['id'] ?>)">Mark as Return</button>
+              <button class="btn-return" onclick="markReturn(<?= (int)$a['id'] ?>)"><?= e(t('Mark as Return')) ?></button>
             </div>
           </div>
         <?php endforeach; endif; ?>
@@ -56,14 +56,14 @@ $pageTitle = 'Active Checkouts';
 
 <div class="modal-backdrop" id="returnModal">
   <div class="modal">
-    <h3>Inspect Returned Item</h3>
-    <p>Select the item's condition:</p>
+    <h3><?= e(t('Inspect Returned Item')) ?></h3>
+    <p><?= e(t("Select the item's condition:")) ?></p>
     <div class="condition-choices">
-      <button data-c="good">Returned (Good)</button>
-      <button data-c="damaged">Broken</button>
-      <button data-c="lost">Lost</button>
+      <button data-c="good"><?= e(t('Returned (Good)')) ?></button>
+      <button data-c="damaged"><?= e(t('Broken')) ?></button>
+      <button data-c="lost"><?= e(t('Lost')) ?></button>
     </div>
-    <button class="modal-close" onclick="closeModal()">Cancel</button>
+    <button class="modal-close" onclick="closeModal()"><?= e(t('Cancel')) ?></button>
   </div>
 </div>
 <script src="../assets/js/admin.js"></script>

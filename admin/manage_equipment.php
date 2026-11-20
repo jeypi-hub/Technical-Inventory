@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/Equipment.php';
-$user = User::requireStaffOrAdmin();
+$user = User::requirePermission('equipment.manage');
 
 $flash = $_GET['flash'] ?? '';
 $search = trim($_GET['q'] ?? '');
@@ -30,10 +30,10 @@ foreach ($catalogItems as $item) {
 $pageTitle = 'Manage Catalog';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= e(app_language_tag()) ?>" data-theme="<?= e(app_theme()) ?>" data-compact="<?= app_compact_mode() ? '1' : '0' ?>">
 <head>
 <meta charset="UTF-8">
-<title>Manage Catalog — ACLC</title>
+<title><?= e(t('Manage Catalog')) ?> — ACLC</title>
 <link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=12">
 <link rel="stylesheet" href="../assets/css/manage_equipment.css?v=6">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
@@ -44,23 +44,23 @@ $pageTitle = 'Manage Catalog';
   <main class="main">
     <?php include __DIR__ . '/includes/header.php'; ?>
 
-    <?php if ($flash): ?><div class="flash"><?= e($flash) ?></div><?php endif; ?>
+    <?php if ($flash): ?><div class="flash"><?= e(t($flash)) ?></div><?php endif; ?>
 
     <section class="card catalog-card">
       <div class="card-head">
-        <h2>Manage Equipment Catalog</h2>
+        <h2><?= e(t('Manage Equipment Catalog')) ?></h2>
         <div class="catalog-tools">
           <form method="get" class="searchbar">
-            <input type="text" name="q" placeholder="Search" value="<?= e($search) ?>">
+            <input type="text" name="q" placeholder="<?= e(t('Search')) ?>" value="<?= e($search) ?>">
             <button type="submit">🔍</button>
           </form>
           <button type="button" class="btn-primary catalog-add-button" id="openAddEquipment">
-            <span aria-hidden="true">+</span> Add Equipment
+            <span aria-hidden="true">+</span> <?= e(t('Add Equipment')) ?>
           </button>
         </div>
       </div>
       <?php if (empty($groups)): ?>
-        <p class="catalog-empty">No equipment yet.</p>
+        <p class="catalog-empty"><?= e(t('No equipment yet.')) ?></p>
       <?php else: ?>
         <div class="equipment-grid">
           <?php foreach ($groups as $group): ?>
@@ -81,7 +81,7 @@ $pageTitle = 'Manage Catalog';
             ?>
             <button type="button" class="equipment-tile"
                     data-group="<?= e(json_encode($popupData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT)) ?>"
-                    aria-label="View details for <?= e($group['name']) ?>">
+                    aria-label="<?= e(t('View details for')) ?> <?= e($group['name']) ?>">
               <span class="equipment-image">
                 <?php if ($group['image']): ?>
                   <img src="../assets/upload/<?= e($group['image']) ?>" alt="">
@@ -90,11 +90,11 @@ $pageTitle = 'Manage Catalog';
                 <?php endif; ?>
                 <span class="equipment-image-shade" aria-hidden="true"></span>
                 <span class="equipment-availability">
-                  <?= $group['available'] ?> available
+                  <?= e(str_replace('{count}', (string)$group['available'], t('{count} available'))) ?>
                 </span>
                 <span class="equipment-card-footer">
                   <strong class="equipment-name"><?= e($group['name']) ?></strong>
-                  <span>Click to view</span>
+                  <span><?= e(t('Click to view')) ?></span>
                 </span>
               </span>
             </button>
@@ -107,32 +107,32 @@ $pageTitle = 'Manage Catalog';
       <section class="equipment-add-modal" role="dialog" aria-modal="true" aria-labelledby="addEquipmentTitle">
         <div class="equipment-add-heading">
           <div>
-            <h2 id="addEquipmentTitle">Add New Technical Equipment</h2>
-            <p>Add equipment details to your catalog.</p>
+            <h2 id="addEquipmentTitle"><?= e(t('Add New Technical Equipment')) ?></h2>
+            <p><?= e(t('Add equipment details to your catalog.')) ?></p>
           </div>
-          <button type="button" class="catalog-modal-close" id="closeAddEquipment" aria-label="Close">×</button>
+          <button type="button" class="catalog-modal-close" id="closeAddEquipment" aria-label="<?= e(t('Close')) ?>">×</button>
         </div>
         <form method="post" action="actions.php" enctype="multipart/form-data" class="equipment-add-form">
           <input type="hidden" name="do" value="add_equipment">
-          <label for="equipmentName">Equipment Name</label>
-          <input type="text" id="equipmentName" name="name" required maxlength="120" placeholder="e.g. HDMI Cable">
+          <label for="equipmentName"><?= e(t('Equipment Name')) ?></label>
+          <input type="text" id="equipmentName" name="name" required maxlength="120" placeholder="<?= e(t('e.g. HDMI Cable')) ?>">
 
-          <label for="equipmentQuantity">Quantity</label>
+          <label for="equipmentQuantity"><?= e(t('Quantity')) ?></label>
           <input type="number" id="equipmentQuantity" name="quantity" required min="1" step="1" value="1">
-          <small class="form-hint">Each item will receive its own serial number.</small>
+          <small class="form-hint"><?= e(t('Each item will receive its own serial number.')) ?></small>
 
-          <label>Equipment Image</label>
+          <label><?= e(t('Equipment Image')) ?></label>
           <label class="dropzone" id="dropzone">
             <input type="file" name="image" accept="image/*" id="imageInput" hidden>
             <span class="dz-inner">
-              <span class="dz-prompt">Choose File or Drag File</span>
+              <span class="dz-prompt"><?= e(t('Choose File or Drag File')) ?></span>
               <span class="plus" aria-hidden="true">⊕</span>
               <small id="fileName"></small>
             </span>
           </label>
           <div class="equipment-add-actions">
-            <button type="button" class="btn-secondary" id="cancelAddEquipment">Cancel</button>
-            <button type="submit" class="btn-primary">Add Equipment</button>
+            <button type="button" class="btn-secondary" id="cancelAddEquipment"><?= e(t('Cancel')) ?></button>
+            <button type="submit" class="btn-primary"><?= e(t('Add Equipment')) ?></button>
           </div>
         </form>
       </section>
@@ -144,10 +144,10 @@ $pageTitle = 'Manage Catalog';
         <div class="catalog-modal-content">
           <div class="catalog-status-card">
             <div>
-              <span class="catalog-detail-label">Inventory status</span>
+              <span class="catalog-detail-label"><?= e(t('Inventory status')) ?></span>
               <strong id="catalogModalStatus"></strong>
             </div>
-            <button type="button" class="catalog-modal-close" id="catalogModalClose" aria-label="Close">×</button>
+            <button type="button" class="catalog-modal-close" id="catalogModalClose" aria-label="<?= e(t('Close')) ?>">×</button>
           </div>
           <div class="catalog-modal-items" id="catalogModalItems"></div>
         </div>

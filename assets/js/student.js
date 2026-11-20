@@ -1,3 +1,5 @@
+const translate = window.appTranslate || (key => key);
+
 function toggleNotif() {
   document.getElementById('notifPanel')?.classList.toggle('show');
   document.getElementById('profilePanel')?.classList.remove('show');
@@ -20,7 +22,7 @@ if (searchForm) {
   if (!emptyMessage) {
     emptyMessage = document.createElement('p');
     emptyMessage.className = 'empty';
-    emptyMessage.textContent = 'No equipment matches your search.';
+    emptyMessage.textContent = translate('No equipment matches your search.');
     emptyMessage.hidden = true;
     document.querySelector('.equip-grid').appendChild(emptyMessage);
   }
@@ -37,8 +39,8 @@ if (searchForm) {
 
     emptyMessage.hidden = visibleCount > 0;
     emptyMessage.textContent = query
-      ? 'No equipment matches your search.'
-      : 'No equipment yet.';
+      ? translate('No equipment matches your search.')
+      : translate('No equipment yet.');
   });
 }
 
@@ -48,7 +50,7 @@ const cartRequestForm = document.getElementById('borrowCartForm');
 const cartStatus = document.getElementById('borrowCartStatus');
 const hasDigits = (value) => /[0-9]/.test(value);
 const showNumericInputMessage = (label) => {
-  cartStatus.textContent = `Numbers are not allowed in ${label}.`;
+  cartStatus.textContent = translate('Numbers are not allowed in {field}.', { field: label });
 };
 
 if (cartRequestForm && cartStatus) {
@@ -204,7 +206,7 @@ if (itemDialog) {
     const remaining = selectedEquipment.available - quantityInCart(selectedEquipment.name);
     requestQuantity.max = String(Math.max(1, remaining));
     addItemToCartButton.disabled = remaining <= 0;
-    addItemToCartButton.textContent = remaining > 0 ? 'Add to Request' : 'All available added';
+    addItemToCartButton.textContent = remaining > 0 ? translate('Add to Request') : translate('All available added');
   };
 
   const renderCart = () => {
@@ -218,7 +220,10 @@ if (itemDialog) {
     cartCount.hidden = totalQuantity === 0;
     document.getElementById('openBorrowCart').setAttribute(
       'aria-label',
-      `Open borrow request, ${totalQuantity} item${totalQuantity === 1 ? '' : 's'}`
+      translate(
+        totalQuantity === 1 ? 'Open borrow request, {count} item' : 'Open borrow request, {count} items',
+        { count: totalQuantity }
+      )
     );
 
     cartItems.forEach((item, index) => {
@@ -230,7 +235,7 @@ if (itemDialog) {
       const name = document.createElement('strong');
       name.textContent = item.name;
       const stock = document.createElement('small');
-      stock.textContent = `${item.available} available`;
+      stock.textContent = translate('{count} available', { count: item.available });
       details.append(name, stock);
 
       const controls = document.createElement('div');
@@ -239,7 +244,7 @@ if (itemDialog) {
       decrease.type = 'button';
       decrease.dataset.cartAction = 'decrease';
       decrease.dataset.index = String(index);
-      decrease.setAttribute('aria-label', `Decrease ${item.name} quantity`);
+      decrease.setAttribute('aria-label', translate('Decrease {name} quantity', { name: item.name }));
       decrease.textContent = '−';
       decrease.disabled = item.quantity <= 1;
       const quantity = document.createElement('span');
@@ -248,7 +253,7 @@ if (itemDialog) {
       increase.type = 'button';
       increase.dataset.cartAction = 'increase';
       increase.dataset.index = String(index);
-      increase.setAttribute('aria-label', `Increase ${item.name} quantity`);
+      increase.setAttribute('aria-label', translate('Increase {name} quantity', { name: item.name }));
       increase.textContent = '+';
       increase.disabled = item.quantity >= item.available;
       const remove = document.createElement('button');
@@ -256,7 +261,7 @@ if (itemDialog) {
       remove.className = 'borrow-cart-remove';
       remove.dataset.cartAction = 'remove';
       remove.dataset.index = String(index);
-      remove.textContent = 'Remove';
+      remove.textContent = translate('Remove');
       controls.append(decrease, quantity, increase, remove);
       row.append(details, controls);
       cartItemsList.appendChild(row);
@@ -298,7 +303,7 @@ if (itemDialog) {
     const quantity = Number(requestQuantity.value);
     const alreadyRequested = quantityInCart(selectedEquipment.name);
     if (quantity > selectedEquipment.available - alreadyRequested) {
-      requestQuantity.setCustomValidity('Requested quantity exceeds the remaining available stock.');
+      requestQuantity.setCustomValidity(translate('Requested quantity exceeds the remaining available stock.'));
       requestQuantity.reportValidity();
       return;
     }
@@ -329,9 +334,9 @@ if (itemDialog) {
       };
 
       document.getElementById('detailName').textContent = button.dataset.name;
-      document.getElementById('detailStatus').textContent = available ? 'Available' : 'Unavailable';
+      document.getElementById('detailStatus').textContent = available ? translate('Available') : translate('Unavailable');
       document.getElementById('detailStock').textContent =
-        `${button.dataset.available} available`;
+        translate('{count} available', { count: button.dataset.available });
       requestQuantity.setCustomValidity('');
       requestQuantity.value = '1';
       syncAddToCartButton();
@@ -413,7 +418,7 @@ if (headerScannerDialog) {
         if (code) {
           scannerSerial.textContent = code.rawValue.trim();
           scannerResult.hidden = false;
-          setHeaderScannerStatus('QR code scanned.');
+          setHeaderScannerStatus(translate('QR code scanned.'));
           stopHeaderScanner();
           return;
         }
@@ -421,7 +426,7 @@ if (headerScannerDialog) {
         if (run !== scannerRun) return;
         stopHeaderScanner();
         retryScannerButton.hidden = false;
-        setHeaderScannerStatus(`Could not read the QR code: ${error.message}`, true);
+        setHeaderScannerStatus(translate('Could not read the QR code: {error}', { error: error.message }), true);
         return;
       }
     }
@@ -437,21 +442,21 @@ if (headerScannerDialog) {
     scannerResult.hidden = true;
     scannerSerial.textContent = '';
     retryScannerButton.hidden = true;
-    setHeaderScannerStatus('Starting camera…');
+    setHeaderScannerStatus(translate('Starting camera…'));
 
     if (!('BarcodeDetector' in window)) {
-      setHeaderScannerStatus('QR scanning is not supported by this browser.', true);
+      setHeaderScannerStatus(translate('QR scanning is not supported by this browser.'), true);
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
-      setHeaderScannerStatus('Camera access is unavailable in this browser.', true);
+      setHeaderScannerStatus(translate('Camera access is unavailable in this browser.'), true);
       return;
     }
 
     try {
       scannerDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
     } catch (error) {
-      setHeaderScannerStatus(`Could not start the QR scanner: ${error.message}`, true);
+      setHeaderScannerStatus(translate('Could not start the QR scanner: {error}', { error: error.message }), true);
       return;
     }
 
@@ -469,15 +474,15 @@ if (headerScannerDialog) {
       scannerVideo.srcObject = stream;
       await scannerVideo.play();
       if (run !== scannerRun) return;
-      setHeaderScannerStatus('Point the camera at an item QR code.');
+      setHeaderScannerStatus(translate('Point the camera at an item QR code.'));
       scanHeaderFrame(run);
     } catch (error) {
       if (run !== scannerRun) return;
       stopHeaderScanner();
       retryScannerButton.hidden = false;
       const message = error.name === 'NotAllowedError'
-        ? 'Camera access was denied. Allow camera access and try again.'
-        : `Could not start the camera: ${error.message}`;
+        ? translate('Camera access was denied. Allow camera access and try again.')
+        : translate('Could not start the camera: {error}', { error: error.message });
       setHeaderScannerStatus(message, true);
     }
   };

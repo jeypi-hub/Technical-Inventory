@@ -1,6 +1,6 @@
-const CACHE_NAME = 'aclc-inventory-static-v12';
+const CACHE_NAME = 'aclc-inventory-static-v15';
 const APP_BASE = new URL('./', self.location).pathname;
-const ASSET_VERSION = '12';
+const ASSET_VERSION = '14';
 const PRECACHE_URLS = [
   'offline.html',
   'manifest.webmanifest',
@@ -10,6 +10,7 @@ const PRECACHE_URLS = [
   'assets/css/landing.css',
   'assets/css/manage_equipment.css',
   'assets/css/pwa.css',
+  'assets/css/settings.css',
   'assets/css/student_dashboard.css',
   'assets/css/student_login.css',
   'assets/js/admin.js',

@@ -2,9 +2,12 @@
 require_once __DIR__ . '/../../classes/Notification.php';
 $__notifs = Notification::forUser((int)$user['id'], 10);
 $__unread = Notification::unreadCount((int)$user['id']);
+$__roleLabel = $user['role'] === 'admin'
+    ? 'Administrator'
+    : ($user['role'] === 'staff' ? 'Staff' : 'Student');
 ?>
 <header class="topbar">
-  <h1 class="page-title"><?= e($pageTitle ?? 'Home') ?></h1>
+  <h1 class="page-title"><?= e(t($pageTitle ?? 'Home')) ?></h1>
   <div class="topbar-right">
     <div class="notif" id="notif">
       <button class="notif-btn" onclick="toggleNotif()">
@@ -15,16 +18,16 @@ $__unread = Notification::unreadCount((int)$user['id']);
       </button>
       <div class="notif-panel" id="notifPanel">
         <div class="notif-head">
-          <strong>Notifications</strong>
-          <a href="actions.php?do=notif_read" class="mark-read">Mark all read</a>
+          <strong><?= e(t('Notifications')) ?></strong>
+          <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
         </div>
         <?php if (empty($__notifs)): ?>
-          <div class="notif-empty">No notifications yet.</div>
+          <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
         <?php else: foreach ($__notifs as $n): ?>
           <div class="notif-item <?= $n['is_read']? '' : 'unread' ?>">
             <span class="ni-type <?= e($n['type']) ?>"></span>
             <div>
-              <p><?= e($n['message']) ?></p>
+              <p><?= e(t_notification($n['message'])) ?></p>
               <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
             </div>
           </div>
@@ -37,16 +40,20 @@ $__unread = Notification::unreadCount((int)$user['id']);
       </span>
       <div class="profile-info">
         <strong><?= e($user['name']) ?></strong>
-        <span><?= e(ucfirst($user['role'])) ?></span>
+        <span><?= e(t($__roleLabel)) ?></span>
       </div>
       <div class="profile-panel" id="profilePanel">
         <div class="pp-head">
           <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course'] ?? 'Administrator') ?></span>
+          <span><?= !empty($user['course']) ? e($user['course']) : e(t('Administrator')) ?></span>
         </div>
+        <a href="../settings.php" class="pp-item">
+          <span aria-hidden="true">⚙</span>
+          <?= e(t('Settings')) ?>
+        </a>
         <a href="../auth/admin_logout.php" class="pp-logout">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-          Logout
+          <?= e(t('Logout')) ?>
         </a>
       </div>
     </div>

@@ -14,11 +14,11 @@ $unread = Notification::unreadCount((int)$user['id']);
 $flash = $_GET['flash'] ?? '';
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= e(app_language_tag()) ?>" data-theme="<?= e(app_theme()) ?>" data-compact="<?= app_compact_mode() ? '1' : '0' ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Student Dashboard — ACLC</title>
+<title><?= e(t('Student Dashboard')) ?> — ACLC</title>
 <link rel="stylesheet" href="../assets/css/student_dashboard.css?v=14">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
@@ -32,7 +32,7 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </div>
   <div class="stud-right">
-    <button type="button" class="cart-btn" id="openBorrowCart" aria-label="Open borrow request" title="Borrow request">
+    <button type="button" class="cart-btn" id="openBorrowCart" aria-label="<?= e(t('Open borrow request')) ?>" title="<?= e(t('Borrow Request')) ?>">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 3h8l4 4v14H7z"></path>
         <path d="M15 3v5h5M10 13h6M10 17h6"></path>
@@ -40,7 +40,7 @@ $flash = $_GET['flash'] ?? '';
       </svg>
       <span class="cart-count" id="borrowCartCount" hidden>0</span>
     </button>
-    <button type="button" class="scanner-btn" id="openHeaderScanner" aria-label="Scan QR code" title="Scan QR code">
+    <button type="button" class="scanner-btn" id="openHeaderScanner" aria-label="<?= e(t('Scan QR code')) ?>" title="<?= e(t('Scan QR code')) ?>">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"></path>
         <path d="M8 8h3v3H8zM15 8v3M15 15h1M19 15v4M8 15h3v3H8z"></path>
@@ -54,16 +54,16 @@ $flash = $_GET['flash'] ?? '';
       </button>
       <div class="notif-panel" id="notifPanel">
         <div class="notif-head">
-          <strong>Notifications</strong>
-          <a href="actions.php?do=notif_read" class="mark-read">Mark all read</a>
+          <strong><?= e(t('Notifications')) ?></strong>
+          <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
         </div>
         <?php if (empty($notifs)): ?>
-          <div class="notif-empty">No notifications yet.</div>
+          <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
         <?php else: foreach ($notifs as $n): ?>
           <div class="notif-item <?= $n['is_read']?'':'unread' ?>">
             <span class="ni-type <?= e($n['type']) ?>"></span>
             <div>
-              <p><?= e($n['message']) ?></p>
+              <p><?= e(t_notification($n['message'])) ?></p>
               <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
             </div>
           </div>
@@ -74,23 +74,27 @@ $flash = $_GET['flash'] ?? '';
       <!-- User Avatar Icon -->
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
       <div class="profile-info">
-        <strong>USER <?= e($user['name']) ?></strong>
+        <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
         <span><?= e($user['course']) ?></span>
       </div>
       <div class="profile-panel" id="profilePanel">
         <div class="pp-head">
           <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · Student</span>
+          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
         </div>
         <a href="history.php" class="pp-item">
           <!-- Clock/History Icon -->
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-          Borrowing Request History ›
+          <?= e(t('Borrowing Request History ›')) ?>
+        </a>
+        <a href="../settings.php" class="pp-item">
+          <span aria-hidden="true">⚙</span>
+          <?= e(t('Settings')) ?>
         </a>
         <a href="../auth/student_logout.php" class="pp-logout">
           <!-- Logout Icon -->
           <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          Logout
+          <?= e(t('Logout')) ?>
         </a>
       </div>
     </div>
@@ -98,9 +102,9 @@ $flash = $_GET['flash'] ?? '';
 </header>
 
 <main class="stud-main">
-  <?php if ($flash): ?><div class="flash"><?= e($flash) ?></div><?php endif; ?>
+  <?php if ($flash): ?><div class="flash"><?= e(t($flash)) ?></div><?php endif; ?>
   <form method="get" class="searchbar wide">
-    <input type="text" name="q" placeholder="Search" value="<?= e($search) ?>">
+    <input type="text" name="q" placeholder="<?= e(t('Search')) ?>" value="<?= e($search) ?>">
     <button type="submit">
       <!-- Search Magnifying Glass Icon -->
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -119,27 +123,27 @@ $flash = $_GET['flash'] ?? '';
           data-image="<?= !empty($it['image']) ? e('../assets/upload/' . $it['image']) : '' ?>"
           data-status="<?= e($it['status']) ?>"
           data-available="<?= $availableCount ?>"
-          aria-label="View <?= e($it['name']) ?> details">
+          aria-label="<?= e(t('View details for')) ?> <?= e($it['name']) ?>">
           <?php if (!empty($it['image'])): ?>
             <img src="../assets/upload/<?= e($it['image']) ?>" alt="">
           <?php else: ?>
             <div class="placeholder"></div>
           <?php endif; ?>
-          <span class="image-stock"><?= $availableCount ?> available</span>
+          <span class="image-stock"><?= e(str_replace('{count}', (string)$availableCount, t('{count} available'))) ?></span>
           <span class="image-name"><?= e($it['name']) ?></span>
-          <span class="image-hint">Click to view</span>
+          <span class="image-hint"><?= e(t('Click to view')) ?></span>
         </button>
       </article>
     <?php endforeach; ?>
     <?php if (empty($items)): ?>
-      <p class="empty">No equipment yet.</p>
+      <p class="empty"><?= e(t('No equipment yet.')) ?></p>
     <?php endif; ?>
   </section>
 </main>
 
 <dialog class="item-dialog" id="itemDialog" aria-labelledby="detailName">
   <div class="item-dialog-panel">
-    <button type="button" class="dialog-close" aria-label="Close item details">&times;</button>
+    <button type="button" class="dialog-close" aria-label="<?= e(t('Close item details')) ?>">&times;</button>
     <div class="modal-bento">
       <div class="detail-image-tile" id="detailImageTile">
         <img id="detailImage" alt="">
@@ -148,20 +152,20 @@ $flash = $_GET['flash'] ?? '';
       </div>
       <div class="detail-side">
         <div class="detail-stat-tile">
-          <span class="detail-label">Inventory status</span>
+          <span class="detail-label"><?= e(t('Inventory status')) ?></span>
           <strong id="detailStatus"></strong>
         </div>
         <div class="request-tile" id="requestTile" hidden>
-          <h3>Add this item</h3>
+          <h3><?= e(t('Add this item')) ?></h3>
           <div class="modal-req-form">
-            <input type="number" name="quantity" id="requestQuantity" aria-label="Quantity"
-              placeholder="Quantity" min="1" value="1" required>
-            <button type="button" class="btn-primary" id="addItemToCart">Add to Request</button>
+            <input type="number" name="quantity" id="requestQuantity" aria-label="<?= e(t('Quantity')) ?>"
+              placeholder="<?= e(t('Quantity')) ?>" min="1" value="1" required>
+            <button type="button" class="btn-primary" id="addItemToCart"><?= e(t('Add to Request')) ?></button>
           </div>
         </div>
         <div class="request-tile unavailable-tile" id="unavailableTile" hidden>
-          <strong>This item is currently unavailable.</strong>
-          <span>Check back later to request it.</span>
+          <strong><?= e(t('This item is currently unavailable.')) ?></strong>
+          <span><?= e(t('Check back later to request it.')) ?></span>
         </div>
       </div>
     </div>
@@ -170,33 +174,33 @@ $flash = $_GET['flash'] ?? '';
 
 <dialog class="item-dialog cart-dialog" id="borrowCartDialog" aria-labelledby="borrowCartTitle">
   <div class="item-dialog-panel">
-    <button type="button" class="dialog-close" id="closeBorrowCart" aria-label="Close borrow request">&times;</button>
+    <button type="button" class="dialog-close" id="closeBorrowCart" aria-label="<?= e(t('Close borrow request')) ?>">&times;</button>
     <div class="cart-content">
-      <h2 id="borrowCartTitle">Borrow Request</h2>
-      <p class="cart-intro">Review your items and submit them together.</p>
-      <p class="borrow-cart-empty" id="borrowCartEmpty">No items selected. Add equipment to this request.</p>
+      <h2 id="borrowCartTitle"><?= e(t('Borrow Request')) ?></h2>
+      <p class="cart-intro"><?= e(t('Review your items and submit them together.')) ?></p>
+      <p class="borrow-cart-empty" id="borrowCartEmpty"><?= e(t('No items selected. Add equipment to this request.')) ?></p>
       <ul class="borrow-cart-items" id="borrowCartItems"></ul>
       <form method="post" action="actions.php" class="cart-req-form" id="borrowCartForm">
         <input type="hidden" name="do" value="cart_request">
         <div id="borrowCartHiddenItems"></div>
         <label>
-          Purpose
-          <input type="text" id="borrowCartPurpose" name="purpose" placeholder="e.g. Lab Work"
-            pattern="[^0-9]+" title="Numbers are not allowed." required>
+          <?= e(t('Purpose')) ?>
+          <input type="text" id="borrowCartPurpose" name="purpose" placeholder="<?= e(t('e.g. Lab Work')) ?>"
+            pattern="[^0-9]+" title="<?= e(t('Numbers are not allowed.')) ?>" required>
         </label>
         <label>
-          Classroom
-          <input type="text" name="classroom" placeholder="e.g. Lab 5" required>
+          <?= e(t('Classroom')) ?>
+          <input type="text" name="classroom" placeholder="<?= e(t('e.g. Lab 5')) ?>" required>
         </label>
         <div class="teacher-autocomplete">
-          <label for="borrowCartTeacher">Teacher's Name</label>
-          <input type="text" id="borrowCartTeacher" name="teacher" placeholder="Teacher's Name"
-            pattern="[^0-9]+" title="Numbers are not allowed."
+          <label for="borrowCartTeacher"><?= e(t("Teacher's Name")) ?></label>
+          <input type="text" id="borrowCartTeacher" name="teacher" placeholder="<?= e(t("Teacher's Name")) ?>"
+            pattern="[^0-9]+" title="<?= e(t('Numbers are not allowed.')) ?>"
             aria-autocomplete="list" aria-controls="cartTeacherSuggestions" aria-expanded="false" required>
           <div class="teacher-suggestions" id="cartTeacherSuggestions" role="listbox" hidden></div>
         </div>
         <p class="cart-status" id="borrowCartStatus" role="status" aria-live="polite"></p>
-        <button type="submit" class="btn-primary" id="submitBorrowCart" disabled>Submit Borrow Request</button>
+        <button type="submit" class="btn-primary" id="submitBorrowCart" disabled><?= e(t('Submit Borrow Request')) ?></button>
       </form>
     </div>
   </div>
@@ -204,20 +208,20 @@ $flash = $_GET['flash'] ?? '';
 
 <dialog class="item-dialog scanner-dialog" id="headerScannerDialog" aria-labelledby="headerScannerTitle">
   <div class="item-dialog-panel">
-    <button type="button" class="dialog-close" id="closeHeaderScanner" aria-label="Close QR scanner">&times;</button>
+    <button type="button" class="dialog-close" id="closeHeaderScanner" aria-label="<?= e(t('Close QR scanner')) ?>">&times;</button>
     <div class="scanner-dialog-content">
-      <h2 id="headerScannerTitle">Scan QR code</h2>
-      <p>Point your camera at an item's QR code to read its serial number.</p>
+      <h2 id="headerScannerTitle"><?= e(t('Scan QR code')) ?></h2>
+      <p><?= e(t("Point the camera at an item's QR code to read its serial number.")) ?></p>
       <div class="qr-camera-frame">
         <video id="headerScannerVideo" autoplay muted playsinline></video>
         <div class="qr-scan-guide" aria-hidden="true"></div>
       </div>
       <p class="qr-scanner-status" id="headerScannerStatus" role="status" aria-live="polite"></p>
       <div class="scanner-result" id="headerScannerResult" hidden>
-        <span>Serial number</span>
+        <span><?= e(t('Serial number')) ?></span>
         <strong id="headerScannerSerial"></strong>
       </div>
-      <button type="button" class="btn-primary qr-retry" id="retryHeaderScanner" hidden>Try camera again</button>
+      <button type="button" class="btn-primary qr-retry" id="retryHeaderScanner" hidden><?= e(t('Try camera again')) ?></button>
     </div>
   </div>
 </dialog>

@@ -1,4 +1,6 @@
 
+const translate = window.appTranslate || (key => key);
+
 function toggleNotif() {
   document.getElementById('notifPanel')?.classList.toggle('show');
   document.getElementById('profilePanel')?.classList.remove('show');
@@ -119,7 +121,7 @@ document.querySelectorAll('.equipment-tile').forEach(tile => {
     shade.setAttribute('aria-hidden', 'true');
     const availability = document.createElement('span');
     availability.className = 'equipment-availability';
-    availability.textContent = `${group.available} available`;
+    availability.textContent = translate('{count} available', { count: group.available });
     const title = document.createElement('h2');
     title.id = 'catalogModalTitle';
     title.textContent = group.name;
@@ -127,8 +129,8 @@ document.querySelectorAll('.equipment-tile').forEach(tile => {
     catalogModal.setAttribute('aria-labelledby', title.id);
 
     catalogModalStatus.textContent = group.available === group.quantity
-      ? 'Available'
-      : group.available > 0 ? 'Partially available' : 'Unavailable';
+      ? translate('Available')
+      : group.available > 0 ? translate('Partially available') : translate('Unavailable');
 
     catalogModalItems.replaceChildren();
     group.items.forEach(item => {
@@ -138,20 +140,20 @@ document.querySelectorAll('.equipment-tile').forEach(tile => {
       info.className = 'catalog-unit-info';
       const label = document.createElement('span');
       label.className = 'catalog-unit-label';
-      label.textContent = 'Serial number';
+      label.textContent = translate('Serial number');
       const serial = document.createElement('strong');
       serial.textContent = item.serial_number;
       const status = document.createElement('span');
       status.className = `status ${item.status}`;
-      status.textContent = item.status.charAt(0).toUpperCase() + item.status.slice(1);
+      status.textContent = translate(item.status.charAt(0).toUpperCase() + item.status.slice(1));
       info.append(label, serial, status);
 
       const remove = document.createElement('a');
       remove.className = 'link-del';
       remove.href = `actions.php?do=delete_equipment&id=${encodeURIComponent(item.id)}`;
-      remove.textContent = 'Delete';
+      remove.textContent = translate('Delete');
       remove.addEventListener('click', event => {
-        if (!confirm('Delete this equipment?')) event.preventDefault();
+        if (!confirm(translate('Delete this equipment?'))) event.preventDefault();
       });
       row.append(info, remove);
       catalogModalItems.append(row);
