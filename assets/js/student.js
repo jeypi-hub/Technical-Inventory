@@ -17,13 +17,17 @@ function updateNotificationViewBounds() {
   main.style.setProperty('--notification-top', `${header.getBoundingClientRect().bottom}px`);
 }
 
+function updateNotificationViewMode(isOpen) {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  document.querySelector('.stud-main')?.classList.toggle('notifications-open', isOpen && isMobile);
+  document.body.classList.toggle('notifications-view-open', isOpen && isMobile);
+}
+
 function toggleNotif() {
   const panel = document.getElementById('notifPanel');
   const isOpen = panel?.classList.toggle('show') ?? false;
-  const main = document.querySelector('.stud-main');
   panel?.setAttribute('aria-hidden', String(!isOpen));
-  main?.classList.toggle('notifications-open', isOpen);
-  document.body.classList.toggle('notifications-view-open', isOpen);
+  updateNotificationViewMode(isOpen);
   document.querySelector('.notif-btn')?.setAttribute('aria-expanded', String(isOpen));
   if (isOpen) {
     window.scrollTo(0, 0);
@@ -39,7 +43,8 @@ function toggleProfile() {
   closeNotifications();
 }
 window.addEventListener('resize', () => {
-  if (document.querySelector('.stud-main')?.classList.contains('notifications-open')) {
+  if (document.getElementById('notifPanel')?.classList.contains('show')) {
+    updateNotificationViewMode(true);
     updateNotificationViewBounds();
   }
 });
