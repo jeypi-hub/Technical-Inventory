@@ -21,6 +21,7 @@ Technical_Inventory/
 │   └── includes/{sidebar.php, header.php}
 ├── student/
 │   ├── student_dashboard.php
+│   ├── profile.php
 │   ├── history.php
 │   └── actions.php
 ├── auth/
@@ -51,7 +52,7 @@ For an existing installation, run `database/migration_v4.sql` in phpMyAdmin to a
 
 ### Updating an existing database
 
-After pulling updates, import each migration you have not already applied, in version order. If your database predates staff support, apply `database/migration_v4.sql` first. If the `language`, `dark_mode`, and `compact_mode` columns are not already present, apply `database/migration_v5.sql` to add them. Apply `database/migration_v6.sql` to add audit-log storage. Fresh installs include these fields and the audit table from `database/technical_inventory.sql`.
+After pulling updates, import each migration you have not already applied, in version order. If your database predates staff support, apply `database/migration_v4.sql` first. If the `language`, `dark_mode`, and `compact_mode` columns are not already present, apply `database/migration_v5.sql` to add them. Apply `database/migration_v6.sql` to add audit-log storage, then `database/migration_v7.sql` to add student profile photos. Fresh installs include these fields and the audit table from `database/technical_inventory.sql`.
 
 ## 📲 Install as an app (PWA)
 
@@ -84,6 +85,7 @@ The demo password is `password123` for all listed accounts. Students and staff s
 - Notifications (approved / rejected / return)
 - **Email alerts** on approve / reject (see mail setup below)
 - Personal borrow history
+- Full-page student profile with editable name and email, profile photo, and read-only Student ID
 - Account settings: English, Tagalog, or Bisaya; dark mode; compact mode; and password change
 - Fixed Admin, Staff, and Student permissions; Admin can assign roles
 - Admin-only audit trail for sign-ins, inventory/checkouts, role changes, and account settings
@@ -109,7 +111,7 @@ Access uses fixed permissions: Admin manages roles and audit records; Staff hand
 
 - Passwords stored via `password_hash()` (bcrypt).
 - Serial numbers auto-generated with `bin2hex(random_bytes(4))`.
-- Uploads land in `assets/upload/` (ensure it's writable).
+- Equipment and profile photo uploads land in `assets/upload/` (ensure it's writable).
 - Excel export uses HTML-table trick (opens directly in Excel).
 - No JS frameworks; only vanilla JS + CSS animations/hovers.
 

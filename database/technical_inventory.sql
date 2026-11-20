@@ -18,6 +18,7 @@ CREATE TABLE `users` (
   `user_id`    VARCHAR(64)  NOT NULL UNIQUE,
   `name`       VARCHAR(120) NOT NULL,
   `email`      VARCHAR(160) DEFAULT NULL,
+  `profile_picture` VARCHAR(255) DEFAULT NULL,
   `course`     VARCHAR(80)  DEFAULT NULL,
   `password`   VARCHAR(255) NOT NULL,
   `role`       ENUM('admin','staff','student') NOT NULL DEFAULT 'student',
