@@ -725,7 +725,7 @@ html, body {
   .modal-bento { gap: 8px; }
   .detail-image-tile { min-height: clamp(180px, 30vh, 240px); border-radius: 13px; }
   .detail-image-tile h2 { left: 15px; bottom: 13px; font-size: 26px; }
-  .detail-stock { top: 12px; right: 12px; padding: 7px 10px; }
+  .detail-stock { top: 12px; right: auto; left: 12px; padding: 7px 10px; }
   .detail-side { gap: 8px; }
   .detail-stat-tile, .request-tile { padding: 12px; border-radius: 13px; }
   .modal-req-form { gap: 8px; }
