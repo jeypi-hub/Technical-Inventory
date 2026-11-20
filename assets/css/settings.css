@@ -343,3 +343,13 @@ html[data-compact="1"] .active-row {
     width: 100%;
   }
 }
+
+@media (max-width: 768px) {
+  html[data-compact="1"] .stud-main {
+    padding: 14px 18px calc(96px + env(safe-area-inset-bottom));
+  }
+
+  html[data-theme="dark"] .stud-topbar .stud-right > .profile {
+    background-color: transparent !important;
+  }
+}

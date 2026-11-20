@@ -1,3 +1,10 @@
+:root {
+  --mobile-nav-glass: rgba(0, 73, 243, .65);
+  --mobile-nav-glass-border: rgba(255, 255, 255, .24);
+  --mobile-nav-glass-shadow: 0 10px 32px rgba(10, 12, 74, .28);
+  --mobile-nav-active: #ffe082;
+}
+
 .pwa-install-button {
   position: fixed;
   right: 20px;
@@ -32,13 +39,41 @@
 }
 
 @media (max-width: 768px) {
+  .stud-topbar .stud-right,
+  .sidebar,
+  .sidebar:hover {
+    border: 1px solid var(--mobile-nav-glass-border);
+    border-radius: 24px;
+    background: var(--mobile-nav-glass);
+    box-shadow: var(--mobile-nav-glass-shadow);
+    -webkit-backdrop-filter: blur(15px);
+    backdrop-filter: blur(15px);
+  }
+
+  .stud-topbar .stud-right {
+    right: 12px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    padding: 8px 12px;
+  }
+
   .sidebar, .sidebar:hover {
     top: auto;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: calc(64px + env(safe-area-inset-bottom));
+    right: 12px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    left: 12px;
+    width: auto;
+    height: 68px;
     overflow: visible;
+    color: #fff;
+  }
+
+  .sidebar-nav .nav-item.active,
+  .stud-right > .mobile-nav-link[aria-current="page"] {
+    background: transparent;
+    box-shadow: none;
+    color: var(--mobile-nav-active);
   }
 
   .sidebar-brand { display: none; }
@@ -79,7 +114,7 @@
     width: 100%;
     min-width: 0;
     margin-left: 0;
-    padding: 16px 14px calc(78px + env(safe-area-inset-bottom));
+    padding: 16px 14px calc(88px + env(safe-area-inset-bottom));
   }
   .topbar { gap: 10px; padding: 13px 15px; }
   .page-title { font-size: clamp(18px, 5vw, 25px); }

@@ -220,6 +220,113 @@
   }
 }
 
+@media (max-width: 768px) {
+  .stud-topbar .stud-right {
+    position: fixed;
+    z-index: 900;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    justify-content: space-around;
+    gap: 6px;
+    width: 100%;
+    margin: 0;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: var(--blue-900);
+  }
+
+  .stud-main {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+
+  .student-top-notif {
+    position: absolute;
+    z-index: 920;
+    top: 50%;
+    right: 12px;
+    margin: 0;
+    transform: translateY(-50%);
+  }
+
+  .student-top-notif .notif-btn {
+    width: 56px;
+    height: 56px;
+    background: transparent;
+    color: #fff;
+  }
+
+  .stud-right > .back-btn,
+  .stud-right > .logout-btn,
+  .stud-right > .mobile-nav-link,
+  .stud-right > .cart-btn,
+  .stud-right > .scanner-btn,
+  .stud-right > .profile {
+    display: flex;
+    flex: 0 0 56px;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #fff;
+    text-decoration: none;
+  }
+
+  .stud-right > .mobile-nav-link {
+    position: relative;
+  }
+
+  .stud-right > .mobile-nav-link[aria-current="page"] {
+    background: transparent;
+    color: #ffe082;
+  }
+
+  .stud-right > :is(.back-btn, .logout-btn, .mobile-nav-link, .cart-btn, .scanner-btn, .profile):focus-visible {
+    outline: 3px solid #facc15;
+    outline-offset: 3px;
+  }
+
+  .student-top-notif .notif-btn:focus-visible {
+    outline: 3px solid #facc15;
+    outline-offset: 3px;
+  }
+
+  .stud-right > .back-btn svg,
+  .stud-right > .logout-btn svg,
+  .stud-right > .cart-btn svg,
+  .stud-right > .scanner-btn svg,
+  .stud-right > .profile > svg,
+  .stud-right > .mobile-nav-link svg {
+    width: 24px;
+    height: 24px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+}
+
+@media (max-width: 360px) {
+  .stud-topbar .stud-right {
+    gap: 4px;
+  }
+
+  .stud-right > .back-btn,
+  .stud-right > .logout-btn,
+  .stud-right > .mobile-nav-link,
+  .stud-right > .cart-btn,
+  .stud-right > .scanner-btn,
+  .stud-right > .profile {
+    flex-basis: 44px;
+    width: 44px;
+    height: 44px;
+  }
+}
+
 .back-btn, .logout-btn {
   display: inline-flex;
   align-items: center;

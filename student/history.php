@@ -2,8 +2,11 @@
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
+require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
 $rows = BorrowRequest::forUser((int)$user['id']);
+$notifs = Notification::forUser((int)$user['id'], 10);
+$unread = Notification::unreadCount((int)$user['id']);
 ?>
 <!DOCTYPE html>
 <html lang="<?= e(app_language_tag()) ?>" data-theme="<?= e(app_theme()) ?>" data-compact="<?= app_compact_mode() ? '1' : '0' ?>">
@@ -11,8 +14,8 @@ $rows = BorrowRequest::forUser((int)$user['id']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('My Borrow History')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=14">
-<link rel="stylesheet" href="../assets/css/history.css">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=25">
+<link rel="stylesheet" href="../assets/css/history.css?v=24">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
@@ -21,11 +24,82 @@ $rows = BorrowRequest::forUser((int)$user['id']);
     <img src="../assets/images/aclc_logo.png" alt="ACLC" class="brand-logo">
     <div><strong>ACLC COLLEGE</strong><span>MANDAUE CITY</span></div>
   </div>
+  <div class="notif student-top-notif">
+    <button type="button" class="notif-btn" onclick="toggleNotif()" aria-label="<?= e(t('Notifications')) ?>" aria-expanded="false" title="<?= e(t('Notifications')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+      <?php if ($unread): ?><span class="dot"></span><?php endif; ?>
+    </button>
+    <div class="notif-panel" id="notifPanel">
+      <div class="notif-head">
+        <strong><?= e(t('Notifications')) ?></strong>
+        <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
+      </div>
+      <?php if (empty($notifs)): ?>
+        <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
+      <?php else: foreach ($notifs as $n): ?>
+        <div class="notif-item <?= $n['is_read']?'':'unread' ?>">
+          <span class="ni-type <?= e($n['type']) ?>"></span>
+          <div>
+            <p><?= e(t_notification($n['message'])) ?></p>
+            <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
+          </div>
+        </div>
+      <?php endforeach; endif; ?>
+    </div>
+  </div>
   <div class="stud-right">
-  <a href="student_dashboard.php" class="back-btn">← <?= e(t('Back')) ?></a>
-  <a href="../settings.php" class="back-btn"><?= e(t('Settings')) ?></a>
-  <a href="../auth/student_logout.php" class="logout-btn"><?= e(t('Logout')) ?></a>
-</div>
+    <a href="student_dashboard.php" class="mobile-nav-link home-nav-link" aria-label="<?= e(t('Home')) ?>" title="<?= e(t('Home')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m3 10 9-7 9 7"></path>
+        <path d="M5 9v12h14V9M9 21v-7h6v7"></path>
+      </svg>
+      <span class="nav-label"><?= e(t('Home')) ?></span>
+    </a>
+    <a href="student_dashboard.php?open=borrow" class="cart-btn" aria-label="<?= e(t('Open borrow request')) ?>" title="<?= e(t('Borrow Request')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M7 3h8l4 4v14H7z"></path>
+        <path d="M15 3v5h5M10 13h6M10 17h6"></path>
+        <path d="M3 7v14h4"></path>
+      </svg>
+    </a>
+    <a href="history.php" class="mobile-nav-link" aria-label="<?= e(t('My Borrow History')) ?>" aria-current="page" title="<?= e(t('My Borrow History')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="10"></circle>
+        <polyline points="12 6 12 12 16 14"></polyline>
+      </svg>
+      <span class="nav-label"><?= e(t('My Borrow History')) ?></span>
+    </a>
+    <a href="student_dashboard.php?open=scanner" class="scanner-btn" aria-label="<?= e(t('Scan QR code')) ?>" title="<?= e(t('Scan QR code')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"></path>
+        <path d="M8 8h3v3H8zM15 8v3M15 15h1M19 15v4M8 15h3v3H8z"></path>
+      </svg>
+    </a>
+    <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+        <circle cx="12" cy="7" r="4"></circle>
+      </svg>
+      <div class="profile-info">
+        <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
+        <span><?= e($user['course']) ?></span>
+      </div>
+      <div class="profile-panel" id="profilePanel">
+        <div class="pp-head">
+          <strong><?= e($user['name']) ?></strong>
+          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
+        </div>
+        <a href="../settings.php" class="pp-item">
+          <span aria-hidden="true">⚙</span>
+          <?= e(t('Settings')) ?>
+        </a>
+        <a href="../auth/student_logout.php" class="pp-logout">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <?= e(t('Logout')) ?>
+        </a>
+      </div>
+    </div>
+  </div>
 </header>
 <main class="stud-main">
   <?php if (!empty($_GET['flash'])): ?><div class="flash"><?= e(t($_GET['flash'])) ?></div><?php endif; ?>
@@ -65,5 +139,6 @@ $rows = BorrowRequest::forUser((int)$user['id']);
     </div>
   </div>
 </main>
+<script src="../assets/js/student.js?v=13"></script>
 </body>
 </html>
