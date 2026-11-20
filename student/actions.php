@@ -18,15 +18,15 @@ switch ($do) {
         $quantities = $_POST['quantity'] ?? [];
 
         if (!in_array($durationMinutes, BorrowRequest::VALID_DURATIONS, true)) {
-            header('Location: student_dashboard.php?flash=' . urlencode(t('Please select a valid borrow duration (30 mins up to 4 hours).'))); exit;
+            header('Location: borrow_request.php?flash=' . urlencode(t('Please select a valid borrow duration (30 mins up to 4 hours).'))); exit;
         }
         if ($purpose === '' || $classroom === '' || $teacher === '' ||
             !is_array($equipmentIds) || !is_array($quantities) ||
             count($equipmentIds) === 0 || count($equipmentIds) !== count($quantities)) {
-            header('Location: student_dashboard.php?flash=' . urlencode(t('Add items and complete all request details'))); exit;
+            header('Location: borrow_request.php?flash=' . urlencode(t('Add items and complete all request details'))); exit;
         }
         if (preg_match('/[0-9]/', $purpose) || preg_match('/[0-9]/', $teacher)) {
-            header('Location: student_dashboard.php?flash=' . urlencode('Numbers are not allowed in purpose or teacher name')); exit;
+            header('Location: borrow_request.php?flash=' . urlencode('Numbers are not allowed in purpose or teacher name')); exit;
         }
 
         $requestedItems = [];
@@ -34,12 +34,12 @@ switch ($do) {
             $equipmentId = (int)$equipmentId;
             $quantity = (int)($quantities[$index] ?? 0);
             if ($equipmentId < 1 || $quantity < 1) {
-                header('Location: student_dashboard.php?flash=' . urlencode(t('Borrow request contains an invalid item or quantity'))); exit;
+                header('Location: borrow_request.php?flash=' . urlencode(t('Borrow request contains an invalid item or quantity'))); exit;
             }
 
             $equipment = Equipment::find($equipmentId);
             if (!$equipment || $equipment['status'] !== 'available') {
-                header('Location: student_dashboard.php?flash=' . urlencode(t('An item in your request is no longer available'))); exit;
+                header('Location: borrow_request.php?flash=' . urlencode(t('An item in your request is no longer available'))); exit;
             }
 
             $name = $equipment['name'];
@@ -52,7 +52,7 @@ switch ($do) {
         $availableCounts = Equipment::availableCountsByName();
         foreach ($requestedItems as $name => $item) {
             if ($item['quantity'] > ($availableCounts[$name] ?? 0)) {
-                header('Location: student_dashboard.php?flash=' . urlencode(t_format('Requested quantity for {name} exceeds available stock', ['name' => $name]))); exit;
+                header('Location: borrow_request.php?flash=' . urlencode(t_format('Requested quantity for {name} exceeds available stock', ['name' => $name]))); exit;
             }
         }
 
@@ -73,9 +73,9 @@ switch ($do) {
             $pdo->commit();
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            header('Location: student_dashboard.php?flash=' . urlencode(t('Could not reserve items: insufficient available stock'))); exit;
+            header('Location: borrow_request.php?flash=' . urlencode(t('Could not reserve items: insufficient available stock'))); exit;
         }
-        header('Location: history.php?flash=' . urlencode(t('Borrow request submitted — item status is now Pending and waiting for Technical Staff approval.'))); exit;
+        header('Location: borrow_request.php?submitted=1&flash=' . urlencode(t('Borrow request submitted — item status is now Pending and waiting for Technical Staff approval.'))); exit;
 
     case 'request':
         $equipId    = (int)($_POST['equipment_id'] ?? 0);

@@ -19,17 +19,18 @@ DROP TABLE IF EXISTS `audit_logs`;
 DROP TABLE IF EXISTS `users`;
 
 CREATE TABLE `users` (
-  `id`           INT AUTO_INCREMENT PRIMARY KEY,
-  `user_id`      VARCHAR(64)  NOT NULL UNIQUE,
-  `name`         VARCHAR(120) NOT NULL,
-  `email`        VARCHAR(160) DEFAULT NULL,
-  `course`       VARCHAR(80)  DEFAULT NULL,
-  `password`     VARCHAR(255) NOT NULL,
-  `role`         ENUM('admin','staff','student') NOT NULL DEFAULT 'student',
-  `language`     VARCHAR(8) NOT NULL DEFAULT 'en',
-  `dark_mode`    TINYINT(1) NOT NULL DEFAULT 0,
-  `compact_mode` TINYINT(1) NOT NULL DEFAULT 0,
-  `created_at`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id`              INT AUTO_INCREMENT PRIMARY KEY,
+  `user_id`         VARCHAR(64)  NOT NULL UNIQUE,
+  `name`            VARCHAR(120) NOT NULL,
+  `email`           VARCHAR(160) DEFAULT NULL,
+  `profile_picture` VARCHAR(255) DEFAULT NULL,
+  `course`          VARCHAR(80)  DEFAULT NULL,
+  `password`        VARCHAR(255) NOT NULL,
+  `role`            ENUM('admin','staff','student') NOT NULL DEFAULT 'student',
+  `language`        VARCHAR(8) NOT NULL DEFAULT 'en',
+  `dark_mode`       TINYINT(1) NOT NULL DEFAULT 0,
+  `compact_mode`    TINYINT(1) NOT NULL DEFAULT 0,
+  `created_at`      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_users_role` (`role`)
 ) ENGINE=InnoDB;
 

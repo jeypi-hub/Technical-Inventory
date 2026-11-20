@@ -20,6 +20,31 @@ $__roleLabel = $user['role'] === 'admin'
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
       <?php if ($__unread > 0): ?><span class="dot"></span><?php endif; ?>
     </button>
+    <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <div class="profile-info">
+        <strong><?= e($user['name']) ?></strong>
+        <span><?= e(t($__roleLabel)) ?></span>
+      </div>
+      <div class="profile-panel" id="profilePanel">
+        <div class="pp-head">
+          <strong><?= e($user['name']) ?></strong>
+          <span><?= !empty($user['course']) ? e($user['course']) : e(t($__roleLabel)) ?> · <?= e(t($__roleLabel)) ?></span>
+        </div>
+        <a href="../profile.php" class="pp-item">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg>
+          <?= e(t('Profile')) ?>
+        </a>
+        <a href="../settings.php" class="pp-item">
+          <span aria-hidden="true">⚙</span>
+          <?= e(t('Settings')) ?>
+        </a>
+        <a href="../auth/admin_logout.php" class="pp-logout">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+          <?= e(t('Logout')) ?>
+        </a>
+      </div>
+    </div>
   </div>
   <div class="stud-right">
     <a href="admin_dashboard.php"
@@ -94,26 +119,5 @@ $__roleLabel = $user['role'] === 'admin'
         <span class="nav-label"><?= e(t('Audit Trail')) ?></span>
       </a>
     <?php endif; ?>
-    <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-      <div class="profile-info">
-        <strong><?= e($user['name']) ?></strong>
-        <span><?= e(t($__roleLabel)) ?></span>
-      </div>
-      <div class="profile-panel" id="profilePanel">
-        <div class="pp-head">
-          <strong><?= e($user['name']) ?></strong>
-          <span><?= !empty($user['course']) ? e($user['course']) : e(t($__roleLabel)) ?> · <?= e(t($__roleLabel)) ?></span>
-        </div>
-        <a href="../settings.php" class="pp-item">
-          <span aria-hidden="true">⚙</span>
-          <?= e(t('Settings')) ?>
-        </a>
-        <a href="../auth/admin_logout.php" class="pp-logout">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          <?= e(t('Logout')) ?>
-        </a>
-      </div>
-    </div>
   </div>
 </header>

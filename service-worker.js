@@ -1,6 +1,6 @@
-const CACHE_NAME = 'aclc-inventory-static-v43';
+const CACHE_NAME = 'aclc-inventory-static-v60';
 const APP_BASE = new URL('./', self.location).pathname;
-const ASSET_VERSION = '43';
+const ASSET_VERSION = '60';
 const PRECACHE_URLS = [
   'offline.html',
   'manifest.webmanifest',
@@ -12,10 +12,13 @@ const PRECACHE_URLS = [
   'assets/css/pwa.css',
   'assets/css/settings.css',
   'assets/css/student_dashboard.css',
+  'assets/css/student_profile.css',
   'assets/css/student_login.css',
   'assets/js/admin.js',
   'assets/js/charts.js',
   'assets/js/pwa.js',
+  'assets/js/qr.js',
+  'assets/js/borrow_request.js',
   'assets/js/student.js',
   'assets/images/aclc_logo.png',
   'assets/images/pwa-192.png',
@@ -56,7 +59,7 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  if (PRECACHE_URLS.includes(url.pathname)) {
+  if (PRECACHE_URLS.some(assetUrl => new URL(assetUrl, self.location.origin).pathname === url.pathname)) {
     event.respondWith(
       fetch(request)
         .then(response => {

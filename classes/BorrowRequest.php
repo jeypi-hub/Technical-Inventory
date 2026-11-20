@@ -5,6 +5,7 @@ require_once __DIR__ . '/Notification.php';
 require_once __DIR__ . '/Mailer.php';
 require_once __DIR__ . '/AuditLog.php';
 
+
 class BorrowRequest
 {
     /**
@@ -327,6 +328,56 @@ class BorrowRequest
         );
         $stmt->execute([$userId]);
         return $stmt->fetchAll();
+    }
+
+    public static function countForUser(int $userId, string $search = ''): int
+    {
+        self::syncOverdueAndLost();
+        [$where, $params] = self::userHistoryFilters($userId, $search);
+        $stmt = db()->prepare(
+            "SELECT COUNT(*)
+             FROM borrow_requests br
+             JOIN equipment e ON e.id = br.equipment_id
+             $where"
+        );
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public static function pageForUser(int $userId, string $search, int $limit, int $offset): array
+    {
+        self::syncOverdueAndLost();
+        [$where, $params] = self::userHistoryFilters($userId, $search);
+        $stmt = db()->prepare(
+            "SELECT br.*, e.name AS equipment_name, e.serial_number
+             FROM borrow_requests br
+             JOIN equipment e ON e.id = br.equipment_id
+             $where
+             ORDER BY br.requested_at DESC
+             LIMIT :limit OFFSET :offset"
+        );
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+        $stmt->bindValue(':offset', max(0, $offset), PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    private static function userHistoryFilters(int $userId, string $search): array
+    {
+        $where = 'WHERE br.user_id = :user_id';
+        $params = [':user_id' => $userId];
+        if ($search !== '') {
+            $where .= " AND CONCAT_WS(' ', CONCAT('#', br.id), br.status, e.name, br.classroom,
+                                      br.teacher, br.purpose, br.quantity,
+                                      DATE_FORMAT(COALESCE(br.returned_at, br.approved_at, br.requested_at), '%Y-%m-%d %H:%i'),
+                                      DATE_FORMAT(COALESCE(br.returned_at, br.approved_at, br.requested_at), '%b %d, %Y %h:%i %p'))
+                          LIKE :search";
+            $params[':search'] = '%' . $search . '%';
+        }
+        return [$where, $params];
     }
 
     private static function listByStatus(array $statuses): array

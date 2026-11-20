@@ -48,6 +48,39 @@ class User
         return $u;
     }
 
+    public static function profileForUser(int $userId): ?array
+    {
+        $stmt = db()->prepare(
+            'SELECT user_id, name, email, profile_picture
+             FROM users WHERE id = ?'
+        );
+        $stmt->execute([$userId]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public static function updateProfile(
+        int $userId,
+        string $name,
+        ?string $email,
+        ?string $profilePicture
+    ): bool {
+        if ($profilePicture === null) {
+            $stmt = db()->prepare(
+                'UPDATE users
+                 SET name = ?, email = ?
+                 WHERE id = ?'
+            );
+            return $stmt->execute([$name, $email, $userId]);
+        }
+
+        $stmt = db()->prepare(
+            'UPDATE users
+             SET name = ?, email = ?, profile_picture = ?
+             WHERE id = ?'
+        );
+        return $stmt->execute([$name, $email, $profilePicture, $userId]);
+    }
+
     /**
      * Validates Student ID (e.g. C24-01-1524-MAN121) or Faculty ID (e.g. FAC-001).
      */

@@ -1,5 +1,6 @@
 -- =============================================================
 --  Migration v7:
+--  - Adds profile_picture to users
 --  - Adds 'pending' and 'overdue' statuses to equipment & borrow_requests
 --  - Adds duration_minutes (30-min intervals up to 4 hours), reserved_equipment_ids,
 --    qr_token, borrowed_at, and due_at to borrow_requests
@@ -9,6 +10,12 @@
 
 USE `technical_inventory`;
 
+SET @db_name = DATABASE();
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'users' AND COLUMN_NAME = 'profile_picture');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE `users` ADD COLUMN `profile_picture` VARCHAR(255) DEFAULT NULL AFTER `email`', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 ALTER TABLE `equipment`
   MODIFY COLUMN `status` ENUM('available','pending','borrowed','overdue','maintenance','lost')
   NOT NULL DEFAULT 'available';
@@ -16,8 +23,6 @@ ALTER TABLE `equipment`
 ALTER TABLE `borrow_requests`
   MODIFY COLUMN `status` ENUM('pending','approved','borrowed','overdue','rejected','returned','lost','broken')
   NOT NULL DEFAULT 'pending';
-
-SET @db_name = DATABASE();
 
 SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = @db_name AND TABLE_NAME = 'borrow_requests' AND COLUMN_NAME = 'reserved_equipment_ids');
 SET @sql = IF(@col_exists = 0, 'ALTER TABLE `borrow_requests` ADD COLUMN `reserved_equipment_ids` TEXT DEFAULT NULL AFTER `equipment_id`', 'SELECT 1');
