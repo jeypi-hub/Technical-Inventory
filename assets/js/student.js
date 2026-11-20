@@ -1,16 +1,34 @@
 const translate = window.appTranslate || (key => key);
 
 function toggleNotif() {
-  document.getElementById('notifPanel')?.classList.toggle('show');
+  const panel = document.getElementById('notifPanel');
+  const isOpen = panel?.classList.toggle('show') ?? false;
+  document.querySelector('.notif-btn')?.setAttribute('aria-expanded', String(isOpen));
   document.getElementById('profilePanel')?.classList.remove('show');
+  document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', 'false');
 }
 function toggleProfile() {
-  document.getElementById('profilePanel')?.classList.toggle('show');
+  const panel = document.getElementById('profilePanel');
+  const isOpen = panel?.classList.toggle('show') ?? false;
+  document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', String(isOpen));
   document.getElementById('notifPanel')?.classList.remove('show');
+  document.querySelector('.notif-btn')?.setAttribute('aria-expanded', 'false');
 }
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.notif'))   document.getElementById('notifPanel')?.classList.remove('show');
-  if (!e.target.closest('.profile')) document.getElementById('profilePanel')?.classList.remove('show');
+  if (!e.target.closest('.notif')) {
+    document.getElementById('notifPanel')?.classList.remove('show');
+    document.querySelector('.notif-btn')?.setAttribute('aria-expanded', 'false');
+  }
+  if (!e.target.closest('.profile')) {
+    document.getElementById('profilePanel')?.classList.remove('show');
+    document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', 'false');
+  }
+});
+document.querySelector('.profile[role="button"]')?.addEventListener('keydown', (event) => {
+  if (event.key === 'Enter' || event.key === ' ') {
+    event.preventDefault();
+    toggleProfile();
+  }
 });
 
 const searchForm = document.querySelector('.searchbar.wide');
@@ -497,6 +515,19 @@ if (headerScannerDialog) {
   retryScannerButton.addEventListener('click', startHeaderScanner);
   headerScannerDialog.addEventListener('cancel', (event) => event.preventDefault());
   headerScannerDialog.addEventListener('close', stopHeaderScanner);
+}
+
+const dashboardActionUrl = new URL(window.location.href);
+const dashboardAction = dashboardActionUrl.searchParams.get('open');
+if (dashboardAction) {
+  dashboardActionUrl.searchParams.delete('open');
+  window.history.replaceState(null, '', `${dashboardActionUrl.pathname}${dashboardActionUrl.search}${dashboardActionUrl.hash}`);
+
+  if (dashboardAction === 'borrow') {
+    document.getElementById('borrowCartDialog')?.showModal();
+  } else if (dashboardAction === 'scanner') {
+    document.getElementById('openHeaderScanner')?.click();
+  }
 }
 
 // stagger entrance for equipment cards
