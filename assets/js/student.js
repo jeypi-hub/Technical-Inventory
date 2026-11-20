@@ -9,18 +9,29 @@ function closeNotifications() {
   document.querySelector('.notif-btn')?.setAttribute('aria-expanded', 'false');
 }
 
+function updateNotificationViewBounds() {
+  const main = document.querySelector('.stud-main');
+  const header = document.querySelector('.stud-topbar');
+  if (!main || !header) return;
+
+  main.style.setProperty('--notification-top', `${header.getBoundingClientRect().bottom}px`);
+}
+
+function updateNotificationViewMode(isOpen) {
+  const isMobile = window.matchMedia('(max-width: 768px)').matches;
+  document.querySelector('.stud-main')?.classList.toggle('notifications-open', isOpen && isMobile);
+  document.body.classList.toggle('notifications-view-open', isOpen && isMobile);
+}
+
 function toggleNotif() {
   const panel = document.getElementById('notifPanel');
   const isOpen = panel?.classList.toggle('show') ?? false;
-  const main = document.querySelector('.stud-main');
   panel?.setAttribute('aria-hidden', String(!isOpen));
-  main?.classList.toggle('notifications-open', isOpen);
-  document.body.classList.toggle('notifications-view-open', isOpen);
+  updateNotificationViewMode(isOpen);
   document.querySelector('.notif-btn')?.setAttribute('aria-expanded', String(isOpen));
   if (isOpen) {
     window.scrollTo(0, 0);
-    const header = document.querySelector('.stud-topbar');
-    main?.style.setProperty('--notification-top', `${header?.getBoundingClientRect().bottom ?? 60}px`);
+    updateNotificationViewBounds();
     document.getElementById('profilePanel')?.classList.remove('show');
   }
   document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', 'false');
@@ -31,6 +42,12 @@ function toggleProfile() {
   document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', String(isOpen));
   closeNotifications();
 }
+window.addEventListener('resize', () => {
+  if (document.getElementById('notifPanel')?.classList.contains('show')) {
+    updateNotificationViewMode(true);
+    updateNotificationViewBounds();
+  }
+});
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.profile')) {
     document.getElementById('profilePanel')?.classList.remove('show');

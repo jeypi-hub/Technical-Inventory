@@ -19,7 +19,7 @@ $flash = $_GET['flash'] ?? '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('Student Dashboard')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=28">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=31">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body class="has-student-nav">
@@ -238,6 +238,6 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </div>
 </dialog>
-<script src="../assets/js/student.js?v=14"></script>
+<script src="../assets/js/student.js?v=17"></script>
 </body>
 </html>

@@ -114,33 +114,17 @@ html, body {
   box-shadow: 0 12px 36px rgba(0, 0, 0, .2);
 }
 .notif-panel.show, .profile-panel.show { display: block; animation: pop .18s ease-out; }
-.stud-main.notifications-open {
+.stud-main > .notif-panel.show {
   position: fixed;
-  z-index: 800;
+  z-index: 950;
   top: var(--notification-top, 60px);
-  right: 0;
-  bottom: 0;
-  left: 0;
-  overflow: hidden;
+  right: 24px;
+  left: auto;
+  width: min(360px, calc(100vw - 48px));
   max-width: none;
-  margin: 0;
-  padding: 0;
-}
-.stud-main.notifications-open > .notif-panel {
-  position: relative;
-  inset: auto;
-  width: 100%;
-  max-width: none;
-  height: 100%;
-  max-height: none;
+  max-height: min(420px, calc(100dvh - var(--notification-top, 60px) - 16px));
   overflow-y: auto;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  animation: none;
 }
-.stud-main.notifications-open > .dashboard-content { display: none; }
-body.notifications-view-open { overflow: hidden; }
 @keyframes pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
 .notif-head {
@@ -553,6 +537,34 @@ body.notifications-view-open { overflow: hidden; }
 
 /* Media Queries for True Responsiveness */
 @media (max-width: 768px) {
+  .stud-main.notifications-open {
+    position: fixed;
+    z-index: 800;
+    top: var(--notification-top, 60px);
+    right: 0;
+    bottom: 0;
+    left: 0;
+    overflow: hidden;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+  }
+  .stud-main.notifications-open > .notif-panel {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    max-width: none;
+    height: 100%;
+    max-height: none;
+    overflow-y: auto;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+  }
+  .stud-main.notifications-open > .dashboard-content { display: none; }
+  body.notifications-view-open { overflow: hidden; }
   .stud-topbar {
     position: relative;
     gap: 8px;
@@ -678,9 +690,6 @@ body.notifications-view-open { overflow: hidden; }
     outline: 3px solid #facc15;
     outline-offset: 3px;
   }
-  .stud-main.notifications-open {
-    bottom: calc(76px + env(safe-area-inset-bottom));
-  }
   .stud-right .profile-panel {
     right: 0;
     top: auto;
@@ -690,9 +699,6 @@ body.notifications-view-open { overflow: hidden; }
 
 @media (max-width: 480px) {
   .stud-topbar { position: relative; padding: 9px 12px; }
-  .stud-main.notifications-open {
-    bottom: calc(70px + env(safe-area-inset-bottom));
-  }
   .stud-brand { gap: 8px; }
   .stud-brand span { display: none; }
   .profile-info { display: none; } /* Hide profile text name on tiny mobile screens to save space */
@@ -734,9 +740,6 @@ body.notifications-view-open { overflow: hidden; }
 }
 
 @media (max-width: 360px) {
-  .stud-main.notifications-open {
-    bottom: calc(64px + env(safe-area-inset-bottom));
-  }
   .stud-topbar .stud-right {
     gap: 4px;
   }
