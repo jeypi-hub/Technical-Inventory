@@ -1,8 +1,13 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../classes/User.php';
+require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
+$isFaculty = User::isFaculty($user);
+$roleLabel = $isFaculty ? 'Faculty' : 'Student';
+$durationOptions = BorrowRequest::durationOptions();
+
 $notifs = Notification::forUser((int)$user['id'], 10);
 $unread = Notification::unreadCount((int)$user['id']);
 $flash = $_GET['flash'] ?? '';
@@ -13,10 +18,10 @@ $flash = $_GET['flash'] ?? '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('Borrow Request')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=41">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=37">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
-<body class="has-student-nav borrow-request-fixed-form-page" data-borrow-cart-key="<?= e('aclc-borrow-cart-' . (int)$user['id']) ?>">
+<body class="has-student-nav" data-borrow-cart-key="<?= e('aclc-borrow-cart-' . (int)$user['id']) ?>">
 <header class="stud-topbar">
   <div class="stud-brand">
     <img src="../assets/images/aclc_logo.png" alt="ACLC" class="brand-logo">
@@ -31,10 +36,7 @@ $flash = $_GET['flash'] ?? '';
       <?php if ($unread): ?><span class="dot"></span><?php endif; ?>
     </button>
     <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-      </svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
       <div class="profile-info">
         <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
         <span><?= e($user['course']) ?></span>
@@ -42,7 +44,7 @@ $flash = $_GET['flash'] ?? '';
       <div class="profile-panel" id="profilePanel">
         <div class="pp-head">
           <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
+          <span><?= e($user['course']) ?> · <?= e(t($roleLabel)) ?></span>
         </div>
         <a href="../profile.php" class="pp-item">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg>
@@ -119,6 +121,14 @@ $flash = $_GET['flash'] ?? '';
         <input type="hidden" name="do" value="cart_request">
         <div id="borrowCartHiddenItems"></div>
         <label>
+          <?= e(t('Borrow Duration (30-min intervals, max 4 hours)')) ?>
+          <select name="duration_minutes" id="borrowCartDuration" class="duration-select" required>
+            <?php foreach ($durationOptions as $mins => $label): ?>
+              <option value="<?= (int)$mins ?>" <?= $mins === 60 ? 'selected' : '' ?>><?= e(t($label)) ?></option>
+            <?php endforeach; ?>
+          </select>
+        </label>
+        <label>
           <?= e(t('Purpose')) ?>
           <input type="text" id="borrowCartPurpose" name="purpose" placeholder="<?= e(t('e.g. Lab Work')) ?>"
             pattern="[^0-9]+" title="<?= e(t('Numbers are not allowed.')) ?>" required>
@@ -140,7 +150,7 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </section>
 </main>
-<script src="../assets/js/student.js?v=22"></script>
-<script src="../assets/js/borrow_request.js?v=2"></script>
+<script src="../assets/js/student.js?v=23"></script>
+<script src="../assets/js/borrow_request.js?v=3"></script>
 </body>
 </html>

@@ -17,12 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id  = trim($_POST['user_id'] ?? '');
     $pw = $_POST['password'] ?? '';
     $account = User::findByUserId($id);
-    if ($account && $account['role'] === 'student' && !User::isValidStudentId($id)) {
+    if ($account && $account['role'] === 'student' && !User::isValidBorrowerId($id)) {
         AuditLog::record('auth.login.failed', 'user', null, [
             'attempted_user_id' => $id,
-            'reason' => 'invalid_student_id',
+            'reason' => 'invalid_student_or_faculty_id',
         ]);
-        $error = 'Invalid student ID format. Use C##-##-####-MAN###.';
+        $error = 'Invalid ID format. Use C##-##-####-MAN### (Student) or FAC-### (Faculty).';
     } else {
         $u = User::authenticateStudentOrStaff($id, $pw);
         if (!$u) {
@@ -71,14 +71,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="right-section">
-      <h2>Student &amp; Staff Portal</h2>
+      <h2>Student, Faculty &amp; Staff Portal</h2>
       <?php if (!empty($error)): ?><div class="alert"><?= e($error) ?></div><?php endif; ?>
       
       <form class="login-form" method="POST">
         
         <div class="input-group">
           <label for="user_id">ID No.</label>
-          <input type="text" id="user_id" name="user_id" placeholder="Enter your student or staff ID" required autofocus
+          <input type="text" id="user_id" name="user_id" placeholder="Student (C24-...), Faculty (FAC-001), or Staff ID" required autofocus
            value="<?= e($_POST['user_id'] ?? '') ?>">
         </div>
 
@@ -87,7 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="password-wrapper">
             <input type="password" id="password" name="password" placeholder="Enter your password" required />
             <button type="button" id="togglePassword" aria-label="Toggle password visibility">
-              <!-- Default Eye Icon (Hidden State) -->
               <svg id="eyeIcon" viewBox="0 0 24 24">
                 <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                 <circle cx="12" cy="12" r="3"></circle>

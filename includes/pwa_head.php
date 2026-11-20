@@ -26,6 +26,6 @@ window.appTranslate = (key, values = {}) => {
 <link rel="manifest" href="<?= $appBasePath ?>/manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="<?= $appBasePath ?>/assets/images/pwa-192.png">
 <link rel="apple-touch-icon" href="<?= $appBasePath ?>/assets/images/pwa-192.png">
-<link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/pwa.css?v=28">
-<link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/settings.css?v=20">
-<script defer src="<?= $appBasePath ?>/assets/js/pwa.js?v=8"></script>
+<link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/pwa.css?v=30">
+<link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/settings.css?v=22">
+<script defer src="<?= $appBasePath ?>/assets/js/pwa.js?v=10"></script>

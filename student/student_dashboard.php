@@ -5,6 +5,8 @@ require_once __DIR__ . '/../classes/Equipment.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
+$isFaculty = User::isFaculty($user);
+$roleLabel = $isFaculty ? 'Faculty' : 'Student';
 
 if (($_GET['open'] ?? '') === 'borrow') {
     header('Location: borrow_request.php');
@@ -14,6 +16,7 @@ if (($_GET['open'] ?? '') === 'borrow') {
 $search = trim($_GET['q'] ?? '');
 $items  = Equipment::all($search ?: null);
 $availableCounts = Equipment::availableCountsByName();
+$statusBreakdown = Equipment::statusBreakdownByName();
 $notifs = Notification::forUser((int)$user['id'], 10);
 $unread = Notification::unreadCount((int)$user['id']);
 $flash = $_GET['flash'] ?? '';
@@ -23,8 +26,8 @@ $flash = $_GET['flash'] ?? '';
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= e(t('Student Dashboard')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=36">
+<title><?= e(t($roleLabel . ' Dashboard')) ?> — ACLC</title>
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=37">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body class="has-student-nav" data-borrow-cart-key="<?= e('aclc-borrow-cart-' . (int)$user['id']) ?>">
@@ -50,7 +53,7 @@ $flash = $_GET['flash'] ?? '';
       <div class="profile-panel" id="profilePanel">
         <div class="pp-head">
           <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
+          <span><?= e($user['course']) ?> · <?= e(t($roleLabel)) ?></span>
         </div>
         <a href="../profile.php" class="pp-item">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg>
@@ -123,33 +126,47 @@ $flash = $_GET['flash'] ?? '';
   <div class="dashboard-content">
   <?php if ($flash): ?><div class="flash"><?= e(t($flash)) ?></div><?php endif; ?>
   <form method="get" class="searchbar wide">
-    <input type="text" name="q" placeholder="<?= e(t('Search')) ?>" value="<?= e($search) ?>">
+    <input type="text" name="q" placeholder="<?= e(t('Search equipment or status...')) ?>" value="<?= e($search) ?>">
     <button type="submit">
-      <!-- Search Magnifying Glass Icon -->
       <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     </button>
   </form>
 
   <section class="equip-grid">
     <?php foreach ($items as $it):
-      $isAvailable = $it['status'] === 'available';
-      $availableCount = $availableCounts[$it['name']] ?? 0; ?>
-      <article class="equip-card <?= $isAvailable ? '' : 'unavailable' ?>"
-        data-search="<?= e($it['name'] . ' ' . $it['serial_number']) ?>">
+      $st = $it['status'];
+      $isAvailable = $st === 'available';
+      $availableCount = $availableCounts[$it['name']] ?? 0;
+      $bd = $statusBreakdown[$it['name']] ?? [
+          'available' => $availableCount,
+          'pending' => 0,
+          'borrowed' => 0,
+          'overdue' => 0,
+          'lost' => 0,
+      ];
+    ?>
+      <article class="equip-card status-card-<?= e($st) ?> <?= $isAvailable ? '' : 'unavailable' ?>"
+        data-search="<?= e($it['name'] . ' ' . $it['serial_number'] . ' ' . $st) ?>">
         <button type="button" class="equip-img item-open"
           data-id="<?= (int)$it['id'] ?>"
           data-name="<?= e($it['name']) ?>"
+          data-serial="<?= e($it['serial_number']) ?>"
           data-image="<?= !empty($it['image']) ? e('../assets/upload/' . $it['image']) : '' ?>"
-          data-status="<?= e($it['status']) ?>"
-          data-available="<?= $availableCount ?>"
+          data-status="<?= e($st) ?>"
+          data-available="<?= (int)$availableCount ?>"
+          data-pending="<?= (int)($bd['pending'] ?? 0) ?>"
+          data-borrowed="<?= (int)($bd['borrowed'] ?? 0) ?>"
+          data-overdue="<?= (int)($bd['overdue'] ?? 0) ?>"
+          data-lost="<?= (int)($bd['lost'] ?? 0) ?>"
           aria-label="<?= e(t('View details for')) ?> <?= e($it['name']) ?>">
           <?php if (!empty($it['image'])): ?>
             <img src="../assets/upload/<?= e($it['image']) ?>" alt="">
           <?php else: ?>
             <div class="placeholder"></div>
           <?php endif; ?>
+          <span class="image-status-pill status-pill-<?= e($st) ?>"><?= e(t(ucfirst($st))) ?></span>
           <span class="image-stock"><?= e(str_replace('{count}', (string)$availableCount, t('{count} available'))) ?></span>
-          <span class="image-name"><?= e($it['name']) ?></span>
+          <span class="image-name"><?= e($it['name']) ?> <small class="image-serial">(<?= e($it['serial_number']) ?>)</small></span>
           <span class="image-hint"><?= e(t('Click to view')) ?></span>
         </button>
       </article>
@@ -172,11 +189,12 @@ $flash = $_GET['flash'] ?? '';
       </div>
       <div class="detail-side">
         <div class="detail-stat-tile">
-          <span class="detail-label"><?= e(t('Inventory status')) ?></span>
+          <span class="detail-label"><?= e(t('Unit Status & Availability Breakdown')) ?></span>
           <strong id="detailStatus"></strong>
+          <div class="status-breakdown-pills" id="detailStatusBreakdown"></div>
         </div>
         <div class="request-tile" id="requestTile" hidden>
-          <h3><?= e(t('Add this item')) ?></h3>
+          <h3><?= e(t('Reserve & Borrow in Advance')) ?></h3>
           <div class="modal-req-form">
             <input type="number" name="quantity" id="requestQuantity" aria-label="<?= e(t('Quantity')) ?>"
               placeholder="<?= e(t('Quantity')) ?>" min="1" value="1" required>
@@ -184,8 +202,8 @@ $flash = $_GET['flash'] ?? '';
           </div>
         </div>
         <div class="request-tile unavailable-tile" id="unavailableTile" hidden>
-          <strong><?= e(t('This item is currently unavailable.')) ?></strong>
-          <span><?= e(t('Check back later to request it.')) ?></span>
+          <strong id="unavailableTitle"><?= e(t('This unit is currently unavailable.')) ?></strong>
+          <span id="unavailableDesc"><?= e(t('Check back later or select an available unit.')) ?></span>
         </div>
       </div>
     </div>
@@ -196,21 +214,30 @@ $flash = $_GET['flash'] ?? '';
   <div class="item-dialog-panel">
     <button type="button" class="dialog-close" id="closeHeaderScanner" aria-label="<?= e(t('Close QR scanner')) ?>">&times;</button>
     <div class="scanner-dialog-content">
-      <h2 id="headerScannerTitle"><?= e(t('Scan QR code')) ?></h2>
-      <p><?= e(t("Point the camera at an item's QR code to read its serial number.")) ?></p>
+      <h2 id="headerScannerTitle"><?= e(t('Scan Staff Approval QR Code')) ?></h2>
+      <p><?= e(t('Scan the QR code generated by Technical Staff upon approval to start your borrow duration timer.')) ?></p>
       <div class="qr-camera-frame">
         <video id="headerScannerVideo" autoplay muted playsinline></video>
         <div class="qr-scan-guide" aria-hidden="true"></div>
       </div>
       <p class="qr-scanner-status" id="headerScannerStatus" role="status" aria-live="polite"></p>
       <div class="scanner-result" id="headerScannerResult" hidden>
-        <span><?= e(t('Serial number')) ?></span>
+        <span><?= e(t('Scanned Code')) ?></span>
         <strong id="headerScannerSerial"></strong>
       </div>
       <button type="button" class="btn-primary qr-retry" id="retryHeaderScanner" hidden><?= e(t('Try camera again')) ?></button>
+
+      <form class="manual-qr-form" id="manualQrForm" method="post" action="actions.php">
+        <input type="hidden" name="do" value="scan_qr">
+        <label for="manualQrToken"><?= e(t('Or enter the Staff QR Verification Code:')) ?></label>
+        <div class="manual-qr-row">
+          <input type="text" id="manualQrToken" name="qr_token" placeholder="e.g. ACLC-REQ-1-A1B2C3D4" required>
+          <button type="submit" class="btn-primary"><?= e(t('Start Timer')) ?></button>
+        </div>
+      </form>
     </div>
   </div>
 </dialog>
-<script src="../assets/js/student.js?v=18"></script>
+<script src="../assets/js/student.js?v=23"></script>
 </body>
 </html>

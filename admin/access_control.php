@@ -21,8 +21,8 @@ $roles = [
 <head>
 <meta charset="UTF-8">
 <title><?= e(t('Access Control')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=8">
-<link rel="stylesheet" href="../assets/css/history.css?v=14">
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=16">
+<link rel="stylesheet" href="../assets/css/history.css?v=26">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>

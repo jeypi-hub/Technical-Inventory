@@ -13,13 +13,18 @@ switch ($do) {
 
     case 'approve':
         $id = (int)($_GET['id'] ?? 0);
-        BorrowRequest::approve($id);
-        header('Location: admin_dashboard.php'); exit;
+        $ok = BorrowRequest::approve($id);
+        if ($ok) {
+            header('Location: admin_dashboard.php?qr_id=' . $id . '&flash=' . urlencode(t('Request approved! Show the generated QR code to the student/faculty when they pick up the item.')));
+        } else {
+            header('Location: admin_dashboard.php?flash=' . urlencode(t('Could not approve request.')));
+        }
+        exit;
 
     case 'reject':
         $id = (int)($_GET['id'] ?? 0);
         BorrowRequest::reject($id);
-        header('Location: admin_dashboard.php'); exit;
+        header('Location: admin_dashboard.php?flash=' . urlencode(t('Request rejected and reserved equipment returned to Available.'))); exit;
 
     case 'mark_return':
         $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);
@@ -102,12 +107,13 @@ switch ($do) {
         header('Content-Disposition: attachment; filename="history_' . date('Ymd_His') . '.xls"');
         echo "\xEF\xBB\xBF"; // UTF-8 BOM
         echo "<table border='1'><tr>";
-        foreach (['ID', 'Date & Time', 'Student', 'Student ID', 'Course', 'Equipment', 'Serial No.', 'Quantity', 'Classroom', 'Teacher', 'Purpose', 'Status'] as $heading) {
+        foreach (['ID', 'Date & Time', 'Borrower', 'Borrower ID', 'Course / Dept', 'Equipment', 'Serial No.', 'Quantity', 'Duration', 'Classroom', 'Teacher', 'Purpose', 'Status'] as $heading) {
             echo '<th>' . e(t($heading)) . '</th>';
         }
         echo '</tr>';
         foreach ($rows as $r) {
-            $dt = $r['returned_at'] ?: $r['approved_at'] ?: $r['requested_at'];
+            $dt = $r['returned_at'] ?: $r['borrowed_at'] ?: $r['approved_at'] ?: $r['requested_at'];
+            $durLabel = BorrowRequest::formatDuration((int)($r['duration_minutes'] ?? 60));
             echo '<tr>';
             echo '<td>' . (int)$r['id'] . '</td>';
             echo '<td>' . e(date('M d, Y h:i A', strtotime($dt))) . '</td>';
@@ -117,6 +123,7 @@ switch ($do) {
             echo '<td>' . e($r['equipment_name']) . '</td>';
             echo '<td>' . e($r['serial_number']) . '</td>';
             echo '<td>' . (int)($r['quantity'] ?? 1) . '</td>';
+            echo '<td>' . e($durLabel) . '</td>';
             echo '<td>' . e($r['classroom']) . '</td>';
             echo '<td>' . e($r['teacher']) . '</td>';
             echo '<td>' . e($r['purpose']) . '</td>';

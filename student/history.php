@@ -4,6 +4,8 @@ require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 require_once __DIR__ . '/../classes/Notification.php';
 $user = User::requireLogin('student');
+$isFaculty = User::isFaculty($user);
+$roleLabel = $isFaculty ? 'Faculty' : 'Student';
 $userId = (int)$user['id'];
 $search = trim(is_string($_GET['q'] ?? null) ? $_GET['q'] : '');
 $perPage = 5;
@@ -24,8 +26,8 @@ $unread = Notification::unreadCount((int)$user['id']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('My Borrow History')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=35">
-<link rel="stylesheet" href="../assets/css/history.css?v=30">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=37">
+<link rel="stylesheet" href="../assets/css/history.css?v=31">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body data-borrow-cart-key="<?= e('aclc-borrow-cart-' . (int)$user['id']) ?>">
@@ -68,7 +70,7 @@ $unread = Notification::unreadCount((int)$user['id']);
       <div class="profile-panel" id="profilePanel">
         <div class="pp-head">
           <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
+          <span><?= e($user['course']) ?> · <?= e(t($roleLabel)) ?></span>
         </div>
         <a href="../profile.php" class="pp-item">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg>
@@ -128,17 +130,24 @@ $unread = Notification::unreadCount((int)$user['id']);
         <?= e($search === '' ? t('No requests yet.') : t('No history records match your search.')) ?>
       </p>
     <?php else: foreach ($rows as $r):
-      $dt = $r['returned_at'] ?: $r['approved_at'] ?: $r['requested_at']; ?>
-      <details class="student-history-record">
+      $dt = $r['returned_at'] ?: $r['borrowed_at'] ?: $r['approved_at'] ?: $r['requested_at'];
+      $durLabel = BorrowRequest::formatDuration((int)($r['duration_minutes'] ?? 60));
+      $st = $r['status'];
+    ?>
+      <details class="student-history-record" <?= in_array($st, ['pending', 'approved', 'borrowed', 'overdue'], true) ? 'open' : '' ?>>
         <summary class="student-history-record-summary">
           <div class="student-history-record-meta">
-            <p><strong><?= e(t('ID')) ?>:</strong> #<?= (int)$r['id'] ?></p>
+            <p><strong><?= e(t('ID')) ?>:</strong> #<?= (int)$r['id'] ?> · <strong><?= e($r['equipment_name']) ?></strong></p>
             <time datetime="<?= e(date(DATE_ATOM, strtotime($dt))) ?>">
               <strong><?= e(t('Date & Time')) ?>:</strong> <?= e(date('M d, Y h:i A', strtotime($dt))) ?>
             </time>
           </div>
           <div class="student-history-record-summary-actions">
-            <span class="status <?= e($r['status']) ?>"><?= e(t(ucfirst($r['status']))) ?></span>
+            <?php if ($st === 'approved'): ?>
+              <span class="status pending"><?= e(t('Pending (Ready for QR Scan)')) ?></span>
+            <?php else: ?>
+              <span class="status <?= e($st) ?>"><?= e(t(ucfirst($st))) ?></span>
+            <?php endif; ?>
             <svg class="student-history-record-chevron" viewBox="0 0 24 24" aria-hidden="true">
               <path d="m6 9 6 6 6-6"></path>
             </svg>
@@ -149,7 +158,33 @@ $unread = Notification::unreadCount((int)$user['id']);
             <div class="student-history-record-fields">
               <div class="student-history-record-field">
                 <span><?= e(t('Equipment')) ?></span>
-                <strong><?= e($r['equipment_name']) ?></strong>
+                <strong><?= e($r['equipment_name']) ?> (<?= e($r['serial_number'] ?? '') ?>)</strong>
+              </div>
+              <div class="student-history-record-field">
+                <span><?= e(t('Duration')) ?></span>
+                <strong><?= e($durLabel) ?></strong>
+              </div>
+              <div class="student-history-record-field">
+                <span><?= e(t('Timer / Due Time')) ?></span>
+                <strong>
+                  <?php if ($st === 'pending'): ?>
+                    <?= e(t('Waiting for Staff Approval')) ?>
+                  <?php elseif ($st === 'approved'): ?>
+                    <span class="timer-badge awaiting-scan"><?= e(t('Approved — Scan QR at Tech Dept')) ?></span>
+                  <?php elseif (in_array($st, ['borrowed', 'overdue'], true) && !empty($r['due_at'])): ?>
+                    <span class="timer-badge <?= $st === 'overdue' ? 'is-overdue' : 'is-running' ?>"
+                          data-due-at="<?= e(date('c', strtotime($r['due_at']))) ?>"
+                          data-borrowed-at="<?= !empty($r['borrowed_at']) ? e(date('c', strtotime($r['borrowed_at']))) : '' ?>">
+                      <?= e(t('Due:')) ?> <?= e(date('h:i A', strtotime($r['due_at']))) ?>
+                    </span>
+                  <?php elseif ($st === 'lost'): ?>
+                    <span class="timer-badge is-overdue"><?= e(t('Exceeded 24 hrs (Lost)')) ?></span>
+                  <?php elseif ($st === 'returned' && !empty($r['returned_at'])): ?>
+                    <?= e(t('Returned')) ?> <?= e(date('h:i A', strtotime($r['returned_at']))) ?>
+                  <?php else: ?>
+                    —
+                  <?php endif; ?>
+                </strong>
               </div>
               <div class="student-history-record-field">
                 <span><?= e(t('Classroom')) ?></span>
@@ -169,10 +204,14 @@ $unread = Notification::unreadCount((int)$user['id']);
             <strong><?= e(t('Purpose')) ?></strong>
             <p><?= e($r['purpose']) ?></p>
           </div>
-          <?php if ($r['status'] === 'pending'): ?>
+          <?php if ($st === 'pending'): ?>
             <div class="student-history-record-actions">
               <a class="btn-cancel" href="actions.php?do=cancel&id=<?= (int)$r['id'] ?>"
                  onclick="return confirm(<?= e(json_encode(t('Cancel this pending request?'))) ?>)"><?= e(t('Cancel')) ?></a>
+            </div>
+          <?php elseif ($st === 'approved'): ?>
+            <div class="student-history-record-actions">
+              <a class="btn-scan-action" href="student_dashboard.php?open=scanner"><?= e(t('Scan QR to Start Timer')) ?></a>
             </div>
           <?php endif; ?>
         </div>
@@ -191,6 +230,6 @@ $unread = Notification::unreadCount((int)$user['id']);
     </nav>
   <?php endif; ?>
 </main>
-<script src="../assets/js/student.js?v=19"></script>
+<script src="../assets/js/student.js?v=23"></script>
 </body>
 </html>
