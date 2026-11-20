@@ -115,13 +115,13 @@
     width: auto;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 20px;
     line-height: 1;
   }
 
   .sidebar-nav .nav-icon svg {
-    width: 32px;
-    height: 32px;
+    width: 20px;
+    height: 20px;
   }
 
   .sidebar-nav .nav-item .nav-label {
@@ -206,8 +206,8 @@
   }
 
   .stud-topbar .student-top-notif .notif-btn svg {
-    width: 25px !important;
-    height: 25px !important;
+    width: 20px !important;
+    height: 20px !important;
   }
 
   .stud-topbar .stud-right > :is(
@@ -294,8 +294,8 @@
     .scanner-btn,
     .profile
   ) > svg {
-    width: 32px !important;
-    height: 32px !important;
+    width: 20px !important;
+    height: 20px !important;
     stroke: currentColor;
     fill: none;
     stroke-width: 2;
@@ -304,8 +304,8 @@
   }
 
   .stud-topbar .stud-right > .profile > svg {
-    width: 25px !important;
-    height: 25px !important;
+    width: 20px !important;
+    height: 20px !important;
   }
 
   .stud-topbar .student-top-notif .notif-btn svg {
@@ -318,8 +318,8 @@
 
   .topbar-right .notif-btn .bell svg,
   .topbar-right .profile .avatar svg {
-    width: 25px;
-    height: 25px;
+    width: 20px;
+    height: 20px;
   }
 
   .stud-topbar .stud-right > .profile .profile-info {
