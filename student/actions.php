@@ -75,7 +75,7 @@ switch ($do) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             header('Location: borrow_request.php?flash=' . urlencode(t('Could not reserve items: insufficient available stock'))); exit;
         }
-        header('Location: borrow_request.php?submitted=1&flash=' . urlencode(t('Borrow request submitted — item status is now Pending and waiting for Technical Staff approval.'))); exit;
+        header('Location: borrow_request.php?submitted=1'); exit;
 
     case 'request':
         $equipId    = (int)($_POST['equipment_id'] ?? 0);
@@ -102,7 +102,7 @@ switch ($do) {
             header('Location: student_dashboard.php?flash=' . urlencode(t('Requested quantity exceeds available stock'))); exit;
         }
         BorrowRequest::create((int)$user['id'], $equipId, $quantity, $purpose, $classroom, $teacher, $durationMinutes);
-        header('Location: history.php?flash=' . urlencode(t('Request submitted — item status is now Pending approval'))); exit;
+        header('Location: history.php'); exit;
 
     case 'scan_qr':
         $qrToken = trim($_POST['qr_token'] ?? $_GET['qr_token'] ?? '');
@@ -111,8 +111,11 @@ switch ($do) {
         if ($isAjax) {
             json_out($result, $result['ok'] ? 200 : 422);
         }
-        $target = $result['ok'] ? 'history.php' : 'student_dashboard.php';
-        header('Location: ' . $target . '?flash=' . urlencode($result['message']));
+        if ($result['ok']) {
+            header('Location: history.php');
+        } else {
+            header('Location: student_dashboard.php?flash=' . urlencode($result['message']));
+        }
         exit;
 
     case 'notif_read':
@@ -123,7 +126,12 @@ switch ($do) {
         $reqId = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
         $ok    = BorrowRequest::cancel($reqId, (int)$user['id']);
         $back  = $_SERVER['HTTP_REFERER'] ?? 'history.php';
-        $msg   = $ok ? t('Request cancelled and item returned to Available.') : t('Cannot cancel — request may already be processed.');
+        if ($ok) {
+            Notification::push((int)$user['id'], 'system', "Borrow request #{$reqId} was cancelled and the item was returned to Available.", $reqId);
+            header('Location: ' . $back);
+            exit;
+        }
+        $msg   = t('Cannot cancel — request may already be processed.');
         $sep   = str_contains($back, '?') ? '&' : '?';
         header('Location: ' . $back . $sep . 'flash=' . urlencode($msg)); exit;
 

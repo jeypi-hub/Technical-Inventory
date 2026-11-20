@@ -135,7 +135,7 @@ html, body {
   position: fixed;
   z-index: 950;
   top: var(--notification-top, 86px);
-  right: 24px;
+  right: var(--notification-right, 24px);
   left: auto;
   width: min(360px, calc(100vw - 48px));
   max-width: none;

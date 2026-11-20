@@ -15,16 +15,16 @@ switch ($do) {
         $id = (int)($_GET['id'] ?? 0);
         $ok = BorrowRequest::approve($id);
         if ($ok) {
-            header('Location: admin_dashboard.php?qr_id=' . $id . '&flash=' . urlencode(t('Request approved! Show the generated QR code to the student/faculty when they pick up the item.')));
+            header('Location: admin_dashboard.php?qr_id=' . $id);
         } else {
-            header('Location: admin_dashboard.php?flash=' . urlencode(t('Could not approve request.')));
+            header('Location: admin_dashboard.php');
         }
         exit;
 
     case 'reject':
         $id = (int)($_GET['id'] ?? 0);
         BorrowRequest::reject($id);
-        header('Location: admin_dashboard.php?flash=' . urlencode(t('Request rejected and reserved equipment returned to Available.'))); exit;
+        header('Location: admin_dashboard.php'); exit;
 
     case 'mark_return':
         $id = (int)($_POST['id'] ?? $_GET['id'] ?? 0);

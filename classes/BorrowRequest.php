@@ -235,6 +235,8 @@ class BorrowRequest
                 throw new RuntimeException('Insufficient available equipment units to reserve.');
             }
             $primaryEquipmentId = (int)$reservedIds[0];
+            $eqRow = Equipment::find($primaryEquipmentId);
+            $equipmentName = $eqRow['name'] ?? 'item(s)';
             $stmt = $pdo->prepare(
                 'INSERT INTO borrow_requests
                  (user_id, equipment_id, reserved_equipment_ids, purpose, classroom, teacher, quantity, duration_minutes, status)
@@ -268,9 +270,15 @@ class BorrowRequest
         }
 
         $durLabel = self::formatDuration($durationMinutes);
+        Notification::push(
+            $userId,
+            'request',
+            "Borrow request #{$reqId} for {$quantity} {$equipmentName} ({$durLabel}) submitted — item status is now Pending and waiting for Technical Staff approval.",
+            $reqId
+        );
         self::notifyManagement(
             'request',
-            "New borrow request #{$reqId} for {$quantity} item(s) ({$durLabel}) is pending approval.",
+            "New borrow request #{$reqId} for {$quantity} {$equipmentName} ({$durLabel}) is pending approval.",
             $reqId
         );
         return $reqId;
