@@ -19,9 +19,9 @@ Technical_Inventory/
 │   ├── history.php
 │   ├── actions.php
 │   └── includes/{sidebar.php, header.php}
+├── profile.php
 ├── student/
 │   ├── student_dashboard.php
-│   ├── profile.php
 │   ├── history.php
 │   └── actions.php
 ├── auth/
@@ -52,7 +52,7 @@ For an existing installation, run `database/migration_v4.sql` in phpMyAdmin to a
 
 ### Updating an existing database
 
-After pulling updates, import each migration you have not already applied, in version order. If your database predates staff support, apply `database/migration_v4.sql` first. If the `language`, `dark_mode`, and `compact_mode` columns are not already present, apply `database/migration_v5.sql` to add them. Apply `database/migration_v6.sql` to add audit-log storage, then `database/migration_v7.sql` to add student profile photos. Fresh installs include these fields and the audit table from `database/technical_inventory.sql`.
+After pulling updates, import each migration you have not already applied, in version order. If your database predates staff support, apply `database/migration_v4.sql` first. If the `language`, `dark_mode`, and `compact_mode` columns are not already present, apply `database/migration_v5.sql` to add them. Apply `database/migration_v6.sql` to add audit-log storage, then `database/migration_v7.sql` to add profile photos for all account roles. Fresh installs include these fields and the audit table from `database/technical_inventory.sql`.
 
 ## 📲 Install as an app (PWA)
 
@@ -85,7 +85,6 @@ The demo password is `password123` for all listed accounts. Students and staff s
 - Notifications (approved / rejected / return)
 - **Email alerts** on approve / reject (see mail setup below)
 - Personal borrow history
-- Full-page student profile with editable name and email, profile photo, and read-only Student ID
 - Account settings: English, Tagalog, or Bisaya; dark mode; compact mode; and password change
 - Fixed Admin, Staff, and Student permissions; Admin can assign roles
 - Admin-only audit trail for sign-ins, inventory/checkouts, role changes, and account settings
@@ -102,6 +101,9 @@ The demo password is `password123` for all listed accounts. Students and staff s
 - History Log with search + **Excel export**
 - Hover-expand sidebar
 - Notification bell with unread dot
+
+**All signed-in users**
+- Full-page profile with editable name and email, profile photo, and a read-only account ID (Student ID for students)
 
 Settings are saved per account. Password changes require the current password and a new password of at least eight characters.
 

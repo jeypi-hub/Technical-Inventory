@@ -52,7 +52,7 @@ $flash = $_GET['flash'] ?? '';
           <strong><?= e($user['name']) ?></strong>
           <span><?= e($user['course']) ?> · <?= e(t('Student')) ?></span>
         </div>
-        <a href="profile.php" class="pp-item">
+        <a href="../profile.php" class="pp-item">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg>
           <?= e(t('Profile')) ?>
         </a>

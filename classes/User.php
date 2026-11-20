@@ -48,18 +48,17 @@ class User
         return $u;
     }
 
-    public static function profileForStudent(int $userId): ?array
+    public static function profileForUser(int $userId): ?array
     {
         $stmt = db()->prepare(
             'SELECT user_id, name, email, profile_picture
-             FROM users
-             WHERE id = ? AND role = ?'
+             FROM users WHERE id = ?'
         );
-        $stmt->execute([$userId, 'student']);
+        $stmt->execute([$userId]);
         return $stmt->fetch() ?: null;
     }
 
-    public static function updateStudentProfile(
+    public static function updateProfile(
         int $userId,
         string $name,
         ?string $email,
@@ -69,17 +68,17 @@ class User
             $stmt = db()->prepare(
                 'UPDATE users
                  SET name = ?, email = ?
-                 WHERE id = ? AND role = ?'
+                 WHERE id = ?'
             );
-            return $stmt->execute([$name, $email, $userId, 'student']);
+            return $stmt->execute([$name, $email, $userId]);
         }
 
         $stmt = db()->prepare(
             'UPDATE users
              SET name = ?, email = ?, profile_picture = ?
-             WHERE id = ? AND role = ?'
+             WHERE id = ?'
         );
-        return $stmt->execute([$name, $email, $profilePicture, $userId, 'student']);
+        return $stmt->execute([$name, $email, $profilePicture, $userId]);
     }
 
     /** Strict student ID format: e.g. C24-01-1524-MAN121  */
