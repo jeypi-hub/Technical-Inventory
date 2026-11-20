@@ -1,24 +1,37 @@
 const translate = window.appTranslate || (key => key);
 
+function closeNotifications() {
+  const panel = document.getElementById('notifPanel');
+  panel?.classList.remove('show');
+  panel?.setAttribute('aria-hidden', 'true');
+  document.querySelector('.stud-main')?.classList.remove('notifications-open');
+  document.body.classList.remove('notifications-view-open');
+  document.querySelector('.notif-btn')?.setAttribute('aria-expanded', 'false');
+}
+
 function toggleNotif() {
   const panel = document.getElementById('notifPanel');
   const isOpen = panel?.classList.toggle('show') ?? false;
+  const main = document.querySelector('.stud-main');
+  panel?.setAttribute('aria-hidden', String(!isOpen));
+  main?.classList.toggle('notifications-open', isOpen);
+  document.body.classList.toggle('notifications-view-open', isOpen);
   document.querySelector('.notif-btn')?.setAttribute('aria-expanded', String(isOpen));
-  document.getElementById('profilePanel')?.classList.remove('show');
+  if (isOpen) {
+    window.scrollTo(0, 0);
+    const header = document.querySelector('.stud-topbar');
+    main?.style.setProperty('--notification-top', `${header?.getBoundingClientRect().bottom ?? 60}px`);
+    document.getElementById('profilePanel')?.classList.remove('show');
+  }
   document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', 'false');
 }
 function toggleProfile() {
   const panel = document.getElementById('profilePanel');
   const isOpen = panel?.classList.toggle('show') ?? false;
   document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', String(isOpen));
-  document.getElementById('notifPanel')?.classList.remove('show');
-  document.querySelector('.notif-btn')?.setAttribute('aria-expanded', 'false');
+  closeNotifications();
 }
 document.addEventListener('click', (e) => {
-  if (!e.target.closest('.notif')) {
-    document.getElementById('notifPanel')?.classList.remove('show');
-    document.querySelector('.notif-btn')?.setAttribute('aria-expanded', 'false');
-  }
   if (!e.target.closest('.profile')) {
     document.getElementById('profilePanel')?.classList.remove('show');
     document.querySelector('.profile[role="button"]')?.setAttribute('aria-expanded', 'false');
@@ -387,7 +400,7 @@ if (itemDialog) {
   });
 
   document.getElementById('openBorrowCart').addEventListener('click', () => {
-    document.getElementById('notifPanel').classList.remove('show');
+    closeNotifications();
     document.getElementById('profilePanel').classList.remove('show');
     cartDialog.showModal();
   });
@@ -506,7 +519,7 @@ if (headerScannerDialog) {
   };
 
   openScannerButton.addEventListener('click', () => {
-    document.getElementById('notifPanel').classList.remove('show');
+    closeNotifications();
     document.getElementById('profilePanel').classList.remove('show');
     headerScannerDialog.showModal();
     startHeaderScanner();

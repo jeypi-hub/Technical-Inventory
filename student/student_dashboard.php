@@ -19,7 +19,7 @@ $flash = $_GET['flash'] ?? '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('Student Dashboard')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=27">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=28">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body class="has-student-nav">
@@ -36,26 +36,6 @@ $flash = $_GET['flash'] ?? '';
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
       <?php if ($unread): ?><span class="dot"></span><?php endif; ?>
     </button>
-    <div class="notif-panel" id="notifPanel">
-      <div class="notif-head">
-        <strong><?= e(t('Notifications')) ?></strong>
-        <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
-      </div>
-      <?php if (empty($notifs)): ?>
-        <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
-      <?php else: foreach ($notifs as $n): ?>
-        <div class="notif-item <?= $n['is_read']?'':'unread' ?>">
-          <span class="ni-type <?= e($n['type']) ?>" aria-hidden="true">
-            <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-          </span>
-          <div class="notif-copy">
-            <p><?= e(t_notification($n['message'])) ?></p>
-            <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
-          </div>
-          <?php if (!$n['is_read']): ?><span class="notif-unread-dot" aria-hidden="true"></span><?php endif; ?>
-        </div>
-      <?php endforeach; endif; ?>
-    </div>
   </div>
   <div class="stud-right">
     <a href="student_dashboard.php" class="mobile-nav-link home-nav-link" aria-label="<?= e(t('Home')) ?>" aria-current="page" title="<?= e(t('Home')) ?>">
@@ -113,6 +93,27 @@ $flash = $_GET['flash'] ?? '';
 </header>
 
 <main class="stud-main">
+  <section class="notif-panel" id="notifPanel" aria-label="<?= e(t('Notifications')) ?>" aria-hidden="true">
+    <div class="notif-head">
+      <strong><?= e(t('Notifications')) ?></strong>
+      <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
+    </div>
+    <?php if (empty($notifs)): ?>
+      <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
+    <?php else: foreach ($notifs as $n): ?>
+      <div class="notif-item <?= $n['is_read']?'':'unread' ?>">
+        <span class="ni-type <?= e($n['type']) ?>" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </span>
+        <div class="notif-copy">
+          <p><?= e(t_notification($n['message'])) ?></p>
+          <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
+        </div>
+        <?php if (!$n['is_read']): ?><span class="notif-unread-dot" aria-hidden="true"></span><?php endif; ?>
+      </div>
+    <?php endforeach; endif; ?>
+  </section>
+  <div class="dashboard-content">
   <?php if ($flash): ?><div class="flash"><?= e(t($flash)) ?></div><?php endif; ?>
   <form method="get" class="searchbar wide">
     <input type="text" name="q" placeholder="<?= e(t('Search')) ?>" value="<?= e($search) ?>">
@@ -150,6 +151,7 @@ $flash = $_GET['flash'] ?? '';
       <p class="empty"><?= e(t('No equipment yet.')) ?></p>
     <?php endif; ?>
   </section>
+  </div>
 </main>
 
 <dialog class="item-dialog" id="itemDialog" aria-labelledby="detailName">
@@ -236,6 +238,6 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </div>
 </dialog>
-<script src="../assets/js/student.js?v=13"></script>
+<script src="../assets/js/student.js?v=14"></script>
 </body>
 </html>

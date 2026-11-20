@@ -114,6 +114,33 @@ html, body {
   box-shadow: 0 12px 36px rgba(0, 0, 0, .2);
 }
 .notif-panel.show, .profile-panel.show { display: block; animation: pop .18s ease-out; }
+.stud-main.notifications-open {
+  position: fixed;
+  z-index: 800;
+  top: var(--notification-top, 60px);
+  right: 0;
+  bottom: 0;
+  left: 0;
+  overflow: hidden;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+.stud-main.notifications-open > .notif-panel {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  overflow-y: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: none;
+}
+.stud-main.notifications-open > .dashboard-content { display: none; }
+body.notifications-view-open { overflow: hidden; }
 @keyframes pop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
 .notif-head {
@@ -651,19 +678,8 @@ html, body {
     outline: 3px solid #facc15;
     outline-offset: 3px;
   }
-  .student-top-notif .notif-panel {
-    position: fixed;
-    z-index: 950;
-    pointer-events: auto;
-    right: 12px;
+  .stud-main.notifications-open {
     bottom: calc(76px + env(safe-area-inset-bottom));
-    left: 12px;
-    top: 58px;
-    width: auto;
-    max-width: none;
-    max-height: none;
-    border-radius: 16px;
-    overflow-y: auto;
   }
   .stud-right .profile-panel {
     right: 0;
@@ -674,7 +690,7 @@ html, body {
 
 @media (max-width: 480px) {
   .stud-topbar { position: relative; padding: 9px 12px; }
-  .student-top-notif .notif-panel {
+  .stud-main.notifications-open {
     bottom: calc(70px + env(safe-area-inset-bottom));
   }
   .stud-brand { gap: 8px; }
@@ -718,6 +734,9 @@ html, body {
 }
 
 @media (max-width: 360px) {
+  .stud-main.notifications-open {
+    bottom: calc(64px + env(safe-area-inset-bottom));
+  }
   .stud-topbar .stud-right {
     gap: 4px;
   }
