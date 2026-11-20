@@ -13,7 +13,7 @@ $pageTitle = 'History';
 <head>
 <meta charset="UTF-8">
 <title><?= e(t('History Log')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/admin_dashboard.css">
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=12">
 <link rel="stylesheet" href="../assets/css/history.css?v=14">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>

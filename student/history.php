@@ -11,7 +11,7 @@ $rows = BorrowRequest::forUser((int)$user['id']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('My Borrow History')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=14">
 <link rel="stylesheet" href="../assets/css/history.css">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
