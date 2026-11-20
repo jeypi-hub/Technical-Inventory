@@ -12,9 +12,15 @@ function closeNotifications() {
 function updateNotificationViewBounds() {
   const main = document.querySelector('.stud-main');
   const header = document.querySelector('.stud-topbar');
+  const notifBtn = document.querySelector('.notif-btn');
   if (!main || !header) return;
 
   main.style.setProperty('--notification-top', `${header.getBoundingClientRect().bottom}px`);
+  if (notifBtn) {
+    const btnRect = notifBtn.getBoundingClientRect();
+    const rightOffset = Math.max(12, window.innerWidth - btnRect.right);
+    main.style.setProperty('--notification-right', `${rightOffset}px`);
+  }
 }
 
 function updateNotificationViewMode(isOpen) {
@@ -480,7 +486,7 @@ if (headerScannerDialog) {
       if (data.ok) {
         setHeaderScannerStatus(data.message || translate('Borrow timer started!'));
         window.setTimeout(() => {
-          window.location.href = `history.php?flash=${encodeURIComponent(data.message || 'Borrow timer started!')}`;
+          window.location.href = 'history.php';
         }, 900);
       } else {
         setHeaderScannerStatus(data.message || translate('Could not activate QR code.'), true);

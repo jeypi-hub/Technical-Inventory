@@ -10,8 +10,14 @@ function closeNotifications() {
 function updateNotificationViewBounds() {
   const main = document.querySelector('.main');
   const header = document.querySelector('.stud-topbar');
+  const notifBtn = document.querySelector('.notif-btn');
   if (!main || !header) return;
   main.style.setProperty('--notification-top', `${header.getBoundingClientRect().bottom + 6}px`);
+  if (notifBtn) {
+    const btnRect = notifBtn.getBoundingClientRect();
+    const rightOffset = Math.max(12, window.innerWidth - btnRect.right);
+    main.style.setProperty('--notification-right', `${rightOffset}px`);
+  }
 }
 
 function toggleNotif() {
