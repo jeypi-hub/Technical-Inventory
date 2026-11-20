@@ -1,6 +1,6 @@
-const CACHE_NAME = 'aclc-inventory-static-v28';
+const CACHE_NAME = 'aclc-inventory-static-v40';
 const APP_BASE = new URL('./', self.location).pathname;
-const ASSET_VERSION = '27';
+const ASSET_VERSION = '39';
 const PRECACHE_URLS = [
   'offline.html',
   'manifest.webmanifest',

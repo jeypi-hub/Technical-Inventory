@@ -346,7 +346,7 @@ html[data-compact="1"] .active-row {
 
 @media (max-width: 768px) {
   html[data-compact="1"] .stud-main {
-    padding: 14px 18px calc(96px + env(safe-area-inset-bottom));
+    padding: 14px 18px calc(78px + env(safe-area-inset-bottom));
   }
 
   html[data-theme="dark"] .stud-topbar .stud-right > .profile {
