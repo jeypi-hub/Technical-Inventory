@@ -249,11 +249,10 @@ document.addEventListener('keydown', event => {
   }
 });
 
-// Live countdown for Active Checkouts in Staff/Admin portal
+// Live countdown for Active Checkouts and 10-minute QR Pickup Expiry in Staff/Admin portal
 function updateAdminTimers() {
-  const timers = document.querySelectorAll('.checkout-timer[data-due-at]');
-  if (!timers.length) return;
   const now = Date.now();
+  const timers = document.querySelectorAll('.checkout-timer[data-due-at]');
   timers.forEach((el) => {
     const dueTime = new Date(el.dataset.dueAt).getTime();
     if (Number.isNaN(dueTime)) return;
@@ -273,8 +272,26 @@ function updateAdminTimers() {
       el.closest('.active-row')?.classList.add('overdue-row');
     }
   });
+
+  const pickupTimers = document.querySelectorAll('.pickup-expiry-timer[data-pickup-expires-at]');
+  pickupTimers.forEach((el) => {
+    const expTime = new Date(el.dataset.pickupExpiresAt).getTime();
+    if (Number.isNaN(expTime)) return;
+    const diffSec = Math.floor((expTime - now) / 1000);
+    if (diffSec > 0) {
+      const mins = Math.floor(diffSec / 60);
+      const secs = diffSec % 60;
+      el.textContent = `QR scan window: ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s left`;
+    } else {
+      el.textContent = 'QR scan window (10m) expired — releasing item…';
+      if (!el.dataset.reloading) {
+        el.dataset.reloading = '1';
+        window.setTimeout(() => window.location.reload(), 1200);
+      }
+    }
+  });
 }
-if (document.querySelector('.checkout-timer[data-due-at]')) {
+if (document.querySelector('.checkout-timer[data-due-at], .pickup-expiry-timer[data-pickup-expires-at]')) {
   updateAdminTimers();
   window.setInterval(updateAdminTimers, 1000);
 }

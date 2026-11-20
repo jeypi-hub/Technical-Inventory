@@ -34,7 +34,7 @@ $pageTitle = 'Active Checkouts';
       <div class="card-head">
         <div>
           <h2><?= e(t('Approved — Awaiting Student QR Scan')) ?> (<?= count($awaitingScan) ?>)</h2>
-          <p class="muted"><?= e(t('Items reserved as Pending. The borrow timer starts as soon as the student scans the QR code.')) ?></p>
+          <p class="muted"><?= e(t('Items reserved as Pending. The student has 10 minutes after approval to scan the QR code before the reservation automatically expires back to Available.')) ?></p>
         </div>
       </div>
       <div class="active-list active-page-list">
@@ -42,6 +42,7 @@ $pageTitle = 'Active Checkouts';
           <div class="empty"><?= e(t('No approved requests awaiting QR code scan.')) ?></div>
         <?php else: foreach ($awaitingScan as $aw):
           $durLabel = BorrowRequest::formatDuration((int)($aw['duration_minutes'] ?? 60));
+          $pickupExpiresTs = strtotime($aw['approved_at'] ?? 'now') + BorrowRequest::PICKUP_EXPIRY_SECONDS;
           $qrPayload = [
               'id' => (int)$aw['id'],
               'qr_token' => (string)($aw['qr_token'] ?? ''),
@@ -51,6 +52,7 @@ $pageTitle = 'Active Checkouts';
               'student_name' => (string)$aw['student_name'],
               'student_uid' => (string)$aw['student_uid'],
               'duration_label' => $durLabel,
+              'pickup_expires_at' => date('c', $pickupExpiresTs),
           ];
         ?>
           <div class="active-row awaiting-qr-row">
@@ -63,6 +65,9 @@ $pageTitle = 'Active Checkouts';
                 <?= e(t('Borrower:')) ?> <strong><?= e($aw['student_name']) ?></strong> (<?= e(t('ID:')) ?> <?= e($aw['student_uid']) ?>)
                 · <?= e(t('Room:')) ?> <?= e($aw['classroom']) ?>
                 · <?= e(t('Code:')) ?> <code><?= e($aw['qr_token'] ?? '') ?></code>
+                · <strong class="pickup-expiry-timer" data-pickup-expires-at="<?= e(date('c', $pickupExpiresTs)) ?>">
+                    <?= e(t('Pickup expires:')) ?> <?= e(date('h:i:s A', $pickupExpiresTs)) ?>
+                  </strong>
               </p>
             </div>
             <div class="return-actions">

@@ -403,8 +403,19 @@ if (itemDialog) {
         });
       }
 
+      const unavailableDesc = document.getElementById('unavailableDesc');
       if (unavailableTitle) {
-        unavailableTitle.textContent = `This unit is currently ${statusLabels[unitStatus] || unitStatus}.`;
+        unavailableTitle.textContent = `${button.dataset.name} (${button.dataset.serial || 'N/A'}) — ${statusLabels[unitStatus] || unitStatus}`;
+      }
+      if (unavailableDesc) {
+        const statusDescriptions = {
+          pending: translate('This unit is currently reserved in a pending borrow request awaiting Technical Staff approval or QR code scan.'),
+          borrowed: translate('This unit is currently checked out and in active use by a borrower.'),
+          overdue: translate('This unit has exceeded its borrow duration and is awaiting return.'),
+          lost: translate('This unit was not returned within 24 hours and is marked as lost.'),
+          maintenance: translate('This unit is currently under maintenance by Technical Staff.')
+        };
+        unavailableDesc.textContent = statusDescriptions[unitStatus] || translate('Check back later or select an available unit.');
       }
 
       requestQuantity.setCustomValidity('');
@@ -419,11 +430,9 @@ if (itemDialog) {
       itemDialog.showModal();
 
       window.clearTimeout(formRevealTimer);
-      if (canBorrow) {
-        formRevealTimer = window.setTimeout(() => {
-          if (itemDialog.open) itemDialog.classList.add('show-form');
-        }, 420);
-      }
+      formRevealTimer = window.setTimeout(() => {
+        if (itemDialog.open) itemDialog.classList.add('show-form');
+      }, 220);
     });
   });
 
@@ -444,11 +453,14 @@ if (headerScannerDialog) {
   const openScannerButton = document.getElementById('openHeaderScanner');
   const closeScannerButton = document.getElementById('closeHeaderScanner');
   const retryScannerButton = document.getElementById('retryHeaderScanner');
+  const qrImageFileInput = document.getElementById('qrImageFileInput');
   const scannerVideo = document.getElementById('headerScannerVideo');
   const scannerStatus = document.getElementById('headerScannerStatus');
   const scannerResult = document.getElementById('headerScannerResult');
   const scannerSerial = document.getElementById('headerScannerSerial');
   const manualQrInput = document.getElementById('manualQrToken');
+  const scanCanvas = document.createElement('canvas');
+  const scanCtx = scanCanvas.getContext('2d', { willReadFrequently: true });
   let scannerStream = null;
   let scannerDetector = null;
   let scannerTimer;
@@ -500,20 +512,50 @@ if (headerScannerDialog) {
     }
   };
 
+  const detectQrFromVideo = async () => {
+    if (scannerDetector) {
+      try {
+        const codes = await scannerDetector.detect(scannerVideo);
+        const found = codes.find((entry) => entry.rawValue && entry.rawValue.trim());
+        if (found) return found.rawValue.trim();
+      } catch {
+        // Fall through to jsQR canvas decoder
+      }
+    }
+
+    if (typeof window.jsQR === 'function' && scanCtx) {
+      const vw = scannerVideo.videoWidth;
+      const vh = scannerVideo.videoHeight;
+      if (vw > 0 && vh > 0) {
+        const targetW = Math.min(640, vw);
+        const targetH = Math.round((vh / vw) * targetW);
+        scanCanvas.width = targetW;
+        scanCanvas.height = targetH;
+        scanCtx.drawImage(scannerVideo, 0, 0, targetW, targetH);
+        const imageData = scanCtx.getImageData(0, 0, targetW, targetH);
+        const qr = window.jsQR(imageData.data, targetW, targetH, {
+          inversionAttempts: 'dontInvert'
+        });
+        if (qr && qr.data && qr.data.trim()) {
+          return qr.data.trim();
+        }
+      }
+    }
+    return null;
+  };
+
   const scanHeaderFrame = async (run) => {
     if (run !== scannerRun || !scannerStream) return;
 
     if (scannerVideo.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
       try {
-        const codes = await scannerDetector.detect(scannerVideo);
+        const detectedValue = await detectQrFromVideo();
         if (run !== scannerRun) return;
-        const code = codes.find((entry) => entry.rawValue.trim());
-        if (code) {
-          const val = code.rawValue.trim();
-          scannerSerial.textContent = val;
+        if (detectedValue) {
+          scannerSerial.textContent = detectedValue;
           scannerResult.hidden = false;
           stopHeaderScanner();
-          await activateScannedToken(val);
+          await activateScannedToken(detectedValue);
           return;
         }
       } catch (error) {
@@ -526,7 +568,7 @@ if (headerScannerDialog) {
     }
 
     if (run === scannerRun) {
-      scannerTimer = window.setTimeout(() => scanHeaderFrame(run), 180);
+      scannerTimer = window.setTimeout(() => scanHeaderFrame(run), 160);
     }
   };
 
@@ -538,27 +580,41 @@ if (headerScannerDialog) {
     retryScannerButton.hidden = true;
     setHeaderScannerStatus(translate('Starting camera…'));
 
-    if (!('BarcodeDetector' in window)) {
-      setHeaderScannerStatus(translate('Camera QR detection is unavailable in this browser — enter the Staff QR Code below.'), true);
-      return;
+    if ('BarcodeDetector' in window) {
+      try {
+        scannerDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
+      } catch {
+        scannerDetector = null;
+      }
     }
+
     if (!navigator.mediaDevices?.getUserMedia) {
-      setHeaderScannerStatus(translate('Camera access is unavailable — enter the Staff QR Code below.'), true);
+      const isInsecureOrigin = window.location.protocol !== 'https:' &&
+        window.location.hostname !== 'localhost' &&
+        window.location.hostname !== '127.0.0.1';
+      setHeaderScannerStatus(
+        isInsecureOrigin
+          ? translate('Live camera requires HTTPS or localhost. Tap "Scan from Photo / Camera App" or enter the Staff QR Code below.')
+          : translate('Live camera is unavailable in this browser. Tap "Scan from Photo / Camera App" or enter the Staff QR Code below.'),
+        true
+      );
       return;
     }
 
     try {
-      scannerDetector = new window.BarcodeDetector({ formats: ['qr_code'] });
-    } catch (error) {
-      setHeaderScannerStatus(translate('Could not start the QR scanner — enter the Staff QR Code below.'), true);
-      return;
-    }
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: { ideal: 'environment' } }
+        });
+      } catch {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: true
+        });
+      }
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: { facingMode: { ideal: 'environment' } }
-      });
       if (run !== scannerRun || !headerScannerDialog.open) {
         stream.getTracks().forEach((track) => track.stop());
         return;
@@ -575,11 +631,63 @@ if (headerScannerDialog) {
       stopHeaderScanner();
       retryScannerButton.hidden = false;
       const message = error.name === 'NotAllowedError'
-        ? translate('Camera access was denied. Allow camera access or enter the Staff QR Code below.')
-        : translate('Could not start the camera — enter the Staff QR Code below.');
+        ? translate('Camera access was denied. Allow camera permission in your browser, or use "Scan from Photo / Camera App" below.')
+        : translate('Could not start the camera ({error}). Use "Scan from Photo / Camera App" or enter the Staff QR Code below.', { error: error.name || error.message });
       setHeaderScannerStatus(message, true);
     }
   };
+
+  qrImageFileInput?.addEventListener('change', () => {
+    const file = qrImageFileInput.files?.[0];
+    if (!file) return;
+    setHeaderScannerStatus(translate('Reading QR code from image…'));
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = async () => {
+      URL.revokeObjectURL(objectUrl);
+      const maxDim = 1024;
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      scanCanvas.width = w;
+      scanCanvas.height = h;
+      scanCtx.drawImage(img, 0, 0, w, h);
+
+      let foundCode = null;
+      if (scannerDetector) {
+        try {
+          const codes = await scannerDetector.detect(scanCanvas);
+          const match = codes.find((c) => c.rawValue && c.rawValue.trim());
+          if (match) foundCode = match.rawValue.trim();
+        } catch {
+          // fallback to jsQR
+        }
+      }
+      if (!foundCode && typeof window.jsQR === 'function') {
+        const imageData = scanCtx.getImageData(0, 0, w, h);
+        const qr = window.jsQR(imageData.data, w, h);
+        if (qr && qr.data && qr.data.trim()) {
+          foundCode = qr.data.trim();
+        }
+      }
+
+      qrImageFileInput.value = '';
+      if (foundCode) {
+        scannerSerial.textContent = foundCode;
+        scannerResult.hidden = false;
+        stopHeaderScanner();
+        await activateScannedToken(foundCode);
+      } else {
+        setHeaderScannerStatus(translate('No valid QR code found in that image. Try again or enter the verification code below.'), true);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      qrImageFileInput.value = '';
+      setHeaderScannerStatus(translate('Could not load the selected image.'), true);
+    };
+    img.src = objectUrl;
+  });
 
   openScannerButton?.addEventListener('click', () => {
     closeNotifications();
@@ -593,11 +701,10 @@ if (headerScannerDialog) {
   headerScannerDialog.addEventListener('close', stopHeaderScanner);
 }
 
-// Live countdown timer for borrowed / overdue items in Borrow History
+// Live countdown timer for borrowed / overdue items AND 10-minute QR pickup expiry in Borrow History
 function updateLiveTimers() {
-  const badges = document.querySelectorAll('[data-due-at]');
-  if (!badges.length) return;
   const now = Date.now();
+  const badges = document.querySelectorAll('[data-due-at]');
   badges.forEach((badge) => {
     const dueTime = new Date(badge.dataset.dueAt).getTime();
     if (Number.isNaN(dueTime)) return;
@@ -621,8 +728,28 @@ function updateLiveTimers() {
       badge.classList.add('is-overdue');
     }
   });
+
+  const pickupBadges = document.querySelectorAll('[data-pickup-expires-at]');
+  pickupBadges.forEach((badge) => {
+    const expTime = new Date(badge.dataset.pickupExpiresAt).getTime();
+    if (Number.isNaN(expTime)) return;
+    const diffSec = Math.floor((expTime - now) / 1000);
+    if (diffSec > 0) {
+      const mins = Math.floor(diffSec / 60);
+      const secs = diffSec % 60;
+      badge.textContent = `Scan QR within ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
+    } else {
+      badge.textContent = 'Pickup window (10m) expired — refreshing…';
+      badge.classList.remove('awaiting-scan');
+      badge.classList.add('is-overdue');
+      if (!badge.dataset.reloading) {
+        badge.dataset.reloading = '1';
+        window.setTimeout(() => window.location.reload(), 1200);
+      }
+    }
+  });
 }
-if (document.querySelector('[data-due-at]')) {
+if (document.querySelector('[data-due-at], [data-pickup-expires-at]')) {
   updateLiveTimers();
   window.setInterval(updateLiveTimers, 1000);
 }

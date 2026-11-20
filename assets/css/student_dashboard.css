@@ -511,6 +511,22 @@ body { overflow-x: visible; }
 .qr-scanner-status.is-error { color: var(--danger); }
 .qr-retry { align-self: flex-start; }
 .qr-retry[hidden] { display: none; }
+.qr-scanner-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.qr-photo-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1.5px solid var(--blue-800);
+  border-radius: 20px;
+  background: #fff;
+  color: var(--blue-800);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .15s;
+}
+.qr-photo-btn:hover { background: #eef2ff; transform: translateY(-1px); }
 .scanner-dialog-content { display: grid; gap: 12px; }
 .scanner-dialog-content h2 { margin: 0; padding-right: 42px; font-size: 20px; }
 .scanner-dialog-content > p:not(.qr-scanner-status) { margin: -5px 0 0; color: var(--muted); font-size: 13px; }

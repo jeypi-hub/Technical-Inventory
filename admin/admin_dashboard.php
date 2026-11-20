@@ -97,12 +97,13 @@ $pageTitle    = 'Home';
       <div class="card-head">
         <div>
           <h2><?= e(t('Approved — Awaiting Student QR Scan')) ?> (<?= count($awaitingScan) ?>)</h2>
-          <p class="muted"><?= e(t('Show the QR code to the student/faculty when they arrive at the Technical Department to start their borrow duration timer.')) ?></p>
+          <p class="muted"><?= e(t('Show the QR code to the student/faculty within 10 minutes of approval to start their borrow duration timer. Unclaimed requests automatically expire back to Available.')) ?></p>
         </div>
       </div>
       <div class="active-list">
         <?php foreach ($awaitingScan as $aw):
           $durLabel = BorrowRequest::formatDuration((int)($aw['duration_minutes'] ?? 60));
+          $pickupExpiresTs = strtotime($aw['approved_at'] ?? 'now') + BorrowRequest::PICKUP_EXPIRY_SECONDS;
           $qrPayload = [
               'id' => (int)$aw['id'],
               'qr_token' => (string)($aw['qr_token'] ?? ''),
@@ -112,6 +113,7 @@ $pageTitle    = 'Home';
               'student_name' => (string)$aw['student_name'],
               'student_uid' => (string)$aw['student_uid'],
               'duration_label' => $durLabel,
+              'pickup_expires_at' => date('c', $pickupExpiresTs),
           ];
         ?>
         <div class="active-row awaiting-qr-row">
@@ -123,6 +125,9 @@ $pageTitle    = 'Home';
             <p>
               <?= e(t('Borrower:')) ?> <strong><?= e($aw['student_name']) ?></strong> (<?= e($aw['student_uid']) ?>)
               · <?= e(t('Code:')) ?> <code><?= e($aw['qr_token'] ?? '') ?></code>
+              · <strong class="pickup-expiry-timer" data-pickup-expires-at="<?= e(date('c', $pickupExpiresTs)) ?>">
+                  <?= e(t('Pickup expires:')) ?> <?= e(date('h:i:s A', $pickupExpiresTs)) ?>
+                </strong>
             </p>
           </div>
           <div class="return-actions">
