@@ -66,9 +66,14 @@ html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink);
   background: #fff; border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.15);
   padding: 12px 0; display: none; z-index: 500;
 }
+.notif-panel {
+  width: 360px; min-width: 0; max-width: calc(100vw - 24px); box-sizing: border-box;
+  max-height: calc(100vh - 80px); max-height: min(420px, calc(100dvh - 80px));
+  overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+}
 .notif-panel.show, .profile-panel.show { display: block; animation: pop .18s ease-out; }
 @keyframes pop { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-.notif-head { display: flex; justify-content: space-between; padding: 6px 16px 10px; border-bottom: 1px solid var(--line); }
+.notif-head { position: sticky; top: 0; z-index: 1; background: #fff; display: flex; justify-content: space-between; padding: 6px 16px 10px; border-bottom: 1px solid var(--line); }
 .mark-read { font-size: 12px; color: var(--blue-800); text-decoration: none; }
 .notif-item { display: flex; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
 .notif-item.unread { background: #f2f3ff; }

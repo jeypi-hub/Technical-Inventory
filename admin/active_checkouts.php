@@ -12,7 +12,7 @@ $pageTitle = 'Active Checkouts';
 <head>
 <meta charset="UTF-8">
 <title>Active Checkouts — ACLC</title>
-<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=8">
+<link rel="stylesheet" href="../assets/css/admin_dashboard.css?v=12">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
 <body>
