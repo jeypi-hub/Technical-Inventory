@@ -489,6 +489,70 @@ class BorrowRequest
         return self::enrichRows($stmt->fetchAll());
     }
 
+    public static function countHistory(string $search = ''): int
+    {
+        self::syncOverdueAndLost();
+        [$where, $params] = self::historyFilters($search);
+        $stmt = db()->prepare(
+            "SELECT COUNT(*)
+             FROM borrow_requests br
+             JOIN users u ON u.id = br.user_id
+             JOIN equipment e ON e.id = br.equipment_id
+             $where"
+        );
+        $stmt->execute($params);
+        return (int)$stmt->fetchColumn();
+    }
+
+    public static function pageHistory(string $search, int $limit, int $offset): array
+    {
+        self::syncOverdueAndLost();
+        [$where, $params] = self::historyFilters($search);
+        $stmt = db()->prepare(
+            "SELECT br.*, u.user_id AS student_uid, u.name AS student_name, u.course,
+                    e.name AS equipment_name, e.serial_number
+             FROM borrow_requests br
+             JOIN users u ON u.id = br.user_id
+             JOIN equipment e ON e.id = br.equipment_id
+             $where
+             ORDER BY br.requested_at DESC
+             LIMIT :limit OFFSET :offset"
+        );
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
+        $stmt->bindValue(':offset', max(0, $offset), PDO::PARAM_INT);
+        $stmt->execute();
+        return self::enrichRows($stmt->fetchAll());
+    }
+
+    private static function historyFilters(string $search): array
+    {
+        $where = "WHERE br.status IN ('pending','approved','borrowed','overdue','rejected','returned','lost','broken')";
+        $params = [];
+        if ($search !== '') {
+            $pattern = '%' . $search . '%';
+            $where .= " AND (u.name LIKE :search_name
+                          OR u.user_id LIKE :search_uid
+                          OR e.name LIKE :search_equipment
+                          OR e.serial_number LIKE :search_serial
+                          OR br.classroom LIKE :search_classroom
+                          OR br.teacher LIKE :search_teacher
+                          OR br.status LIKE :search_status)";
+            $params = [
+                ':search_name' => $pattern,
+                ':search_uid' => $pattern,
+                ':search_equipment' => $pattern,
+                ':search_serial' => $pattern,
+                ':search_classroom' => $pattern,
+                ':search_teacher' => $pattern,
+                ':search_status' => $pattern,
+            ];
+        }
+        return [$where, $params];
+    }
+
     public static function forUser(int $userId): array
     {
         self::syncOverdueAndLost();
