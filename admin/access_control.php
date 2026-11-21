@@ -12,7 +12,8 @@ $users = db()->query(
 )->fetchAll();
 $roles = [
     'admin' => 'Administrator',
-    'staff' => 'Staff',
+    'staff' => 'Technical Staff',
+    'faculty' => 'Faculty',
     'student' => 'Student',
 ];
 ?>
@@ -49,8 +50,9 @@ $roles = [
           </thead>
           <tbody>
             <tr><td><?= e(t('Administrator')) ?></td><td><?= e(t('Full access, including role management and the audit trail.')) ?></td></tr>
-            <tr><td><?= e(t('Staff')) ?></td><td><?= e(t('Manage equipment and checkouts, and view borrowing history.')) ?></td></tr>
-            <tr><td><?= e(t('Student')) ?></td><td><?= e(t('Submit borrow requests and view personal borrowing history.')) ?></td></tr>
+            <tr><td><?= e(t('Technical Staff')) ?></td><td><?= e(t('Manage equipment and checkouts, approve requests, and view borrowing history.')) ?></td></tr>
+            <tr><td><?= e(t('Faculty')) ?></td><td><?= e(t('Submit advance borrow requests, scan QR codes, and view personal borrowing history.')) ?></td></tr>
+            <tr><td><?= e(t('Student')) ?></td><td><?= e(t('Submit advance borrow requests, scan QR codes, and view personal borrowing history.')) ?></td></tr>
           </tbody>
         </table>
       </div>

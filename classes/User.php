@@ -19,6 +19,10 @@ class User
             'checkout.manage',
             'history.view',
         ],
+        'faculty' => [
+            'borrow.request',
+            'borrow.history.own',
+        ],
         'student' => [
             'borrow.request',
             'borrow.history.own',
@@ -43,9 +47,31 @@ class User
     public static function authenticateStudentOrStaff(string $userId, string $password): ?array
     {
         $u = self::findByUserId($userId);
-        if (!$u || !in_array($u['role'], ['student', 'staff'], true)) return null;
+        if (!$u || !in_array($u['role'], ['student', 'faculty', 'staff'], true)) return null;
         if (!password_verify($password, $u['password'])) return null;
         return $u;
+    }
+
+    /**
+     * Unified authentication for all 4 roles (admin, staff, faculty, student).
+     */
+    public static function authenticateAny(string $userId, string $password): ?array
+    {
+        $u = self::findByUserId($userId);
+        if (!$u || !in_array($u['role'], ['admin', 'staff', 'faculty', 'student'], true)) {
+            return null;
+        }
+        if (!password_verify($password, $u['password'])) {
+            return null;
+        }
+        return $u;
+    }
+
+    public static function dashboardPathForRole(string $role, string $prefix = '../'): string
+    {
+        return in_array($role, ['student', 'faculty'], true)
+            ? $prefix . 'student/student_dashboard.php'
+            : $prefix . 'admin/admin_dashboard.php';
     }
 
     public static function profileForUser(int $userId): ?array
@@ -102,19 +128,34 @@ class User
 
     public static function isFaculty(array $user): bool
     {
+        if (($user['role'] ?? '') === 'faculty') {
+            return true;
+        }
         $uid = strtoupper((string)($user['user_id'] ?? ''));
         $course = strtoupper((string)($user['course'] ?? ''));
         return str_starts_with($uid, 'FAC') || str_contains($course, 'FACULTY');
     }
 
-    public static function requireLogin(string $role): array
+    public static function requireBorrower(): array
     {
         start_session_once();
         $user = self::refreshSessionUser();
+        if ($user === null || !in_array($user['role'], ['student', 'faculty'], true)) {
+            header('Location: ../auth/login.php');
+            exit;
+        }
+        return $user;
+    }
+
+    public static function requireLogin(string $role): array
+    {
+        if ($role === 'student') {
+            return self::requireBorrower();
+        }
+        start_session_once();
+        $user = self::refreshSessionUser();
         if ($user === null || $user['role'] !== $role) {
-            $redirect = $role === 'admin' ? '../auth/admin_login.php'
-                                          : '../auth/student_login.php';
-            header("Location: $redirect");
+            header('Location: ../auth/login.php');
             exit;
         }
         return $user;
@@ -147,7 +188,7 @@ class User
         start_session_once();
         $user = self::refreshSessionUser();
         if ($user === null) {
-            header('Location: ../auth/student_login.php');
+            header('Location: ../auth/login.php');
             exit;
         }
         if (!self::can($permission)) {
@@ -161,8 +202,8 @@ class User
     {
         start_session_once();
         $user = self::refreshSessionUser();
-        if (!is_array($user) || !in_array($user['role'] ?? '', ['admin', 'staff', 'student'], true)) {
-            header('Location: auth/student_login.php');
+        if (!is_array($user) || !in_array($user['role'] ?? '', ['admin', 'staff', 'faculty', 'student'], true)) {
+            header('Location: auth/login.php');
             exit;
         }
         return $user;

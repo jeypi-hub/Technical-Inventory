@@ -11,7 +11,9 @@ if ($profile === null) {
 $dashboardUrl = in_array($user['role'], ['admin', 'staff'], true)
     ? 'admin/admin_dashboard.php'
     : 'student/student_dashboard.php';
-$idLabel = $user['role'] === 'student' ? t('Student ID') : t('User ID');
+$idLabel = $user['role'] === 'student'
+    ? t('Student ID')
+    : ($user['role'] === 'faculty' ? t('Faculty ID') : t('User ID'));
 
 $csrfToken = $_SESSION['profile_csrf'] ??= bin2hex(random_bytes(32));
 $successMessage = $_SESSION['profile_flash'] ?? null;

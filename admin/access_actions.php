@@ -26,7 +26,7 @@ $accountId = filter_var($_POST['user_id'] ?? null, FILTER_VALIDATE_INT, [
     'options' => ['min_range' => 1],
 ]);
 $role = $_POST['role'] ?? '';
-if ($accountId === false || !is_string($role) || !in_array($role, ['admin', 'staff', 'student'], true)) {
+if ($accountId === false || !is_string($role) || !in_array($role, ['admin', 'staff', 'faculty', 'student'], true)) {
     access_control_redirect('The selected account or role is invalid.');
 }
 if ((int)$accountId === (int)$actor['id']) {
