@@ -22,7 +22,8 @@ $flash = $_SESSION['audit_trail_flash'] ?? null;
 unset($_SESSION['audit_trail_flash']);
 $roleLabels = [
     'admin' => 'Administrator',
-    'staff' => 'Staff',
+    'staff' => 'Technical Staff',
+    'faculty' => 'Faculty',
     'student' => 'Student',
 ];
 $paginationQuery = array_filter(['action' => $action, 'q' => $search], static fn($value) => $value !== null && $value !== '');

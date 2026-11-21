@@ -35,7 +35,7 @@ $activeBorrowCount = isset($user['id']) ? count(BorrowRequest::activeForUser((in
           <span aria-hidden="true">⚙</span>
           <?= e(t('Settings')) ?>
         </a>
-        <a href="../auth/student_logout.php" class="pp-logout">
+        <a href="../auth/logout.php" class="pp-logout">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
           <?= e(t('Logout')) ?>
         </a>

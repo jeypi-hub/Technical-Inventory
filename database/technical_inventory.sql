@@ -26,7 +26,7 @@ CREATE TABLE `users` (
   `profile_picture` VARCHAR(255) DEFAULT NULL,
   `course`          VARCHAR(80)  DEFAULT NULL,
   `password`        VARCHAR(255) NOT NULL,
-  `role`            ENUM('admin','staff','student') NOT NULL DEFAULT 'student',
+  `role`            ENUM('admin','staff','faculty','student') NOT NULL DEFAULT 'student',
   `language`        VARCHAR(8) NOT NULL DEFAULT 'en',
   `dark_mode`       TINYINT(1) NOT NULL DEFAULT 0,
   `compact_mode`    TINYINT(1) NOT NULL DEFAULT 0,
@@ -125,7 +125,7 @@ INSERT INTO `users` (`user_id`, `name`, `email`, `course`, `password`, `role`) V
   ('C24-01-9654-MAN121',  'User 2',          'user2@aclc.edu.ph',   'BSCS',
    '$2b$10$dEygJtmiYtcLreOPSKocv.22ZMdli2i4GnDsZr.ru96EnaFFKH9Re', 'student'),
   ('FAC-001',             'Faculty Member',  'faculty@aclc.edu.ph', 'Faculty - IT Dept',
-   '$2b$10$dEygJtmiYtcLreOPSKocv.22ZMdli2i4GnDsZr.ru96EnaFFKH9Re', 'student');
+   '$2b$10$dEygJtmiYtcLreOPSKocv.22ZMdli2i4GnDsZr.ru96EnaFFKH9Re', 'faculty');
 
 INSERT INTO `equipment` (`name`, `serial_number`, `image`, `status`) VALUES
   ('HDMI Cable',      'SN-3D4E75F0', NULL, 'available'),
