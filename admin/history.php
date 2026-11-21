@@ -4,8 +4,16 @@ require_once __DIR__ . '/../classes/User.php';
 require_once __DIR__ . '/../classes/BorrowRequest.php';
 $user = User::requirePermission('history.view');
 
-$search = trim($_GET['q'] ?? '');
-$rows = BorrowRequest::history($search ?: null);
+$search = trim(is_string($_GET['q'] ?? null) ? $_GET['q'] : '');
+$perPage = 25;
+$total = BorrowRequest::countHistory($search);
+$totalPages = max(1, (int)ceil($total / $perPage));
+$page = filter_var($_GET['page'] ?? 1, FILTER_VALIDATE_INT, [
+    'options' => ['min_range' => 1],
+]);
+$page = min($totalPages, $page === false ? 1 : $page);
+$rows = BorrowRequest::pageHistory($search, $perPage, ($page - 1) * $perPage);
+$paginationQuery = $search !== '' ? ['q' => $search] : [];
 $pageTitle = 'History';
 ?>
 <!DOCTYPE html>
@@ -95,11 +103,22 @@ $pageTitle = 'History';
             </tr>
           <?php endforeach; ?>
           <?php if (empty($rows)): ?>
-            <tr id="req-<?= (int)$r['id'] ?>" class="<?= ((int)($_GET['focus'] ?? 0) === (int)$r['id']) ? 'focus-highlight' : '' ?>"><td colspan="11" class="empty"><?= e(t('No history yet.')) ?></td></tr>
+            <tr><td colspan="11" class="empty"><?= e(t('No history yet.')) ?></td></tr>
           <?php endif; ?>
           </tbody>
         </table>
       </div>
+      <?php if ($totalPages > 1): ?>
+        <nav class="audit-pagination" aria-label="<?= e(t('History pages')) ?>">
+          <?php if ($page > 1): ?>
+            <a href="?<?= e(http_build_query($paginationQuery + ['page' => $page - 1])) ?>"><?= e(t('Previous')) ?></a>
+          <?php endif; ?>
+          <span><?= e(t_format('Page {page} of {total}', ['page' => (string)$page, 'total' => (string)$totalPages])) ?></span>
+          <?php if ($page < $totalPages): ?>
+            <a href="?<?= e(http_build_query($paginationQuery + ['page' => $page + 1])) ?>"><?= e(t('Next')) ?></a>
+          <?php endif; ?>
+        </nav>
+      <?php endif; ?>
     </section>
   </main>
 </div>

@@ -87,7 +87,6 @@ $paginationQuery = array_filter(['action' => $action, 'q' => $search], static fn
               <th><?= e(t('Actor')) ?></th>
               <th><?= e(t('Event')) ?></th>
               <th><?= e(t('Target')) ?></th>
-              <th><?= e(t('Details')) ?></th>
             </tr>
           </thead>
           <tbody>
@@ -105,20 +104,10 @@ $paginationQuery = array_filter(['action' => $action, 'q' => $search], static fn
               <td><?= e($actorName . $actorId) ?><?php if ($actorRole !== ''): ?><br><small><?= e($actorRole) ?></small><?php endif; ?></td>
               <td><?= e(t($events[$row['action']] ?? $row['action'])) ?></td>
               <td><?= e($target !== '' ? $target : '—') ?></td>
-              <td>
-                <?php if (!empty($row['details'])): ?>
-                  <details>
-                    <summary><?= e(t('View details')) ?></summary>
-                    <pre><?= e($row['details']) ?></pre>
-                  </details>
-                <?php else: ?>
-                  —
-                <?php endif; ?>
-              </td>
             </tr>
           <?php endforeach; ?>
           <?php if (!$rows): ?>
-            <tr><td colspan="5" class="empty"><?= e(t('No audit records found.')) ?></td></tr>
+            <tr><td colspan="4" class="empty"><?= e(t('No audit records found.')) ?></td></tr>
           <?php endif; ?>
           </tbody>
         </table>
