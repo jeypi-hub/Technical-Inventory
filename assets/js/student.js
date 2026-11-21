@@ -497,8 +497,9 @@ if (headerScannerDialog) {
       const data = await res.json();
       if (data.ok) {
         setHeaderScannerStatus(data.message || translate('Borrow timer started!'));
+        const reqParam = data.request_id ? `?focus=${encodeURIComponent(data.request_id)}#req-${encodeURIComponent(data.request_id)}` : '';
         window.setTimeout(() => {
-          window.location.href = 'history.php';
+          window.location.href = `active_borrows.php${reqParam}`;
         }, 900);
       } else {
         setHeaderScannerStatus(data.message || translate('Could not activate QR code.'), true);
@@ -739,12 +740,14 @@ function updateLiveTimers() {
       const secs = diffSec % 60;
       badge.textContent = `Scan QR within ${String(mins).padStart(2, '0')}m ${String(secs).padStart(2, '0')}s`;
     } else {
-      badge.textContent = 'Pickup window (10m) expired — refreshing…';
+      badge.textContent = 'Pickup window (10m) expired — moving to Borrow History…';
       badge.classList.remove('awaiting-scan');
       badge.classList.add('is-overdue');
       if (!badge.dataset.reloading) {
         badge.dataset.reloading = '1';
-        window.setTimeout(() => window.location.reload(), 1200);
+        window.setTimeout(() => {
+          window.location.href = 'history.php';
+        }, 1200);
       }
     }
   });

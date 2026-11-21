@@ -503,6 +503,21 @@ class BorrowRequest
         return self::enrichRows($stmt->fetchAll());
     }
 
+    public static function activeForUser(int $userId): array
+    {
+        self::syncOverdueAndLost();
+        $stmt = db()->prepare(
+            "SELECT br.*, e.name AS equipment_name, e.serial_number
+             FROM borrow_requests br
+             JOIN equipment e ON e.id = br.equipment_id
+             WHERE br.user_id = ?
+               AND br.status IN ('pending', 'approved', 'borrowed', 'overdue')
+             ORDER BY br.requested_at DESC"
+        );
+        $stmt->execute([$userId]);
+        return self::enrichRows($stmt->fetchAll());
+    }
+
     public static function countForUser(int $userId, string $search = ''): int
     {
         self::syncOverdueAndLost();

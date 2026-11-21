@@ -116,7 +116,7 @@ try {
     const viewBtn = document.getElementById('viewSubmittedRequestBtn');
     const closeBtn = document.getElementById('closeSubmittedDialog');
     if (viewBtn && submittedReqId) {
-      viewBtn.href = `history.php?q=${encodeURIComponent('#' + submittedReqId)}&focus=${encodeURIComponent(submittedReqId)}#req-${encodeURIComponent(submittedReqId)}`;
+      viewBtn.href = `active_borrows.php?focus=${encodeURIComponent(submittedReqId)}#req-${encodeURIComponent(submittedReqId)}`;
     }
     if (submittedDialog) {
       window.setTimeout(() => submittedDialog.showModal(), 80);

@@ -68,7 +68,7 @@ $__roleLabel = $user['role'] === 'admin'
         <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
         <line x1="12" y1="22.08" x2="12" y2="12"></line>
       </svg>
-      <span class="nav-label"><?= e(t('Manage Catalog')) ?></span>
+      <span class="nav-label"><?= e(t('Catalog')) ?></span>
     </a>
     <a href="active_checkouts.php"
        class="mobile-nav-link"
@@ -80,7 +80,7 @@ $__roleLabel = $user['role'] === 'admin'
         <path d="M9 4.5V3h6v1.5"></path>
         <path d="m8 13 2.5 2.5L16 10"></path>
       </svg>
-      <span class="nav-label"><?= e(t('Active Checkouts')) ?></span>
+      <span class="nav-label"><?= e(t('Checkouts')) ?></span>
     </a>
     <a href="history.php"
        class="mobile-nav-link"
@@ -91,7 +91,7 @@ $__roleLabel = $user['role'] === 'admin'
         <circle cx="12" cy="12" r="10"></circle>
         <polyline points="12 6 12 12 16 14"></polyline>
       </svg>
-      <span class="nav-label"><?= e(t('History Log')) ?></span>
+      <span class="nav-label"><?= e(t('History')) ?></span>
     </a>
     <?php if (User::can('roles.manage')): ?>
       <a href="access_control.php"
@@ -103,7 +103,7 @@ $__roleLabel = $user['role'] === 'admin'
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
           <path d="m9 12 2 2 4-4"></path>
         </svg>
-        <span class="nav-label"><?= e(t('Access Control')) ?></span>
+        <span class="nav-label"><?= e(t('Access')) ?></span>
       </a>
       <a href="audit_trail.php"
          class="mobile-nav-link"
@@ -116,7 +116,7 @@ $__roleLabel = $user['role'] === 'admin'
           <line x1="16" y1="13" x2="8" y2="13"></line>
           <line x1="16" y1="17" x2="8" y2="17"></line>
         </svg>
-        <span class="nav-label"><?= e(t('Audit Trail')) ?></span>
+        <span class="nav-label"><?= e(t('Audit')) ?></span>
       </a>
     <?php endif; ?>
   </div>

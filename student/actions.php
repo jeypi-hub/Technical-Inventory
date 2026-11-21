@@ -105,7 +105,8 @@ switch ($do) {
             json_out($result, $result['ok'] ? 200 : 422);
         }
         if ($result['ok']) {
-            header('Location: history.php');
+            $reqId = (int)($result['request_id'] ?? 0);
+            header('Location: active_borrows.php' . ($reqId > 0 ? '?focus=' . $reqId . '#req-' . $reqId : ''));
         } else {
             header('Location: student_dashboard.php?flash=' . urlencode($result['message']));
         }
@@ -125,6 +126,11 @@ switch ($do) {
                 $relatedId = (int)$m[1];
             }
             if ($relatedId > 0) {
+                $req = BorrowRequest::find($relatedId);
+                if ($req && in_array($req['status'], ['pending', 'approved', 'borrowed', 'overdue'], true)) {
+                    header('Location: active_borrows.php?focus=' . $relatedId . '#req-' . $relatedId);
+                    exit;
+                }
                 header('Location: history.php?q=' . urlencode('#' . $relatedId) . '&focus=' . $relatedId . '#req-' . $relatedId);
                 exit;
             }
