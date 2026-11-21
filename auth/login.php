@@ -67,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="right-section">
       <h2>Portal Login</h2>
-      <p style="margin: -14px 0 22px; color: #6b6f80; font-size: 13px;">
-        Sign in with your Student, Faculty, Technical Staff, or Admin ID
+      <p style="margin: -14px 0 22px; color: #6b6f80; font-size: 13px; text-align: center;">
+        Sign in with your School ID
       </p>
       <?php if (!empty($error)): ?><div class="alert"><?= e($error) ?></div><?php endif; ?>
 
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="input-group">
           <label for="user_id">ID No.</label>
           <input type="text" id="user_id" name="user_id"
-                 placeholder="e.g. C24-01-1524-MAN121, FAC-001, STAFF-001, ADMIN-001"
+                 placeholder="Enter your School ID"
                  required autofocus
                  value="<?= e($_POST['user_id'] ?? '') ?>">
         </div>

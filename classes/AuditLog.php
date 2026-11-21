@@ -39,21 +39,25 @@ class AuditLog
             ? null
             : json_encode($details, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
 
-        $stmt = db()->prepare(
-            'INSERT INTO audit_logs
-                (actor_id, actor_user_id, actor_name, actor_role, action, entity_type, entity_id, details)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-        );
-        $stmt->execute([
-            isset($actor['id']) ? (int)$actor['id'] : null,
-            isset($actor['user_id']) ? (string)$actor['user_id'] : null,
-            isset($actor['name']) ? (string)$actor['name'] : null,
-            isset($actor['role']) ? (string)$actor['role'] : null,
-            $action,
-            $entityType,
-            $entityId,
-            $encodedDetails,
-        ]);
+        try {
+            $stmt = db()->prepare(
+                'INSERT INTO audit_logs
+                    (actor_id, actor_user_id, actor_name, actor_role, action, entity_type, entity_id, details)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+            );
+            $stmt->execute([
+                isset($actor['id']) ? (int)$actor['id'] : null,
+                isset($actor['user_id']) ? (string)$actor['user_id'] : null,
+                isset($actor['name']) ? (string)$actor['name'] : null,
+                isset($actor['role']) ? (string)$actor['role'] : null,
+                $action,
+                $entityType,
+                $entityId,
+                $encodedDetails,
+            ]);
+        } catch (Throwable $e) {
+            error_log('AuditLog record failed: ' . $e->getMessage());
+        }
     }
 
     public static function count(?string $action = null, ?string $search = null): int

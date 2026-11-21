@@ -4,8 +4,19 @@ require_once __DIR__ . '/classes/User.php';
 require_once __DIR__ . '/classes/AuditLog.php';
 $user = User::requireAnyLogin();
 
-function settings_redirect(string $message, string $type = 'error'): void
+$isAjax = (!empty($_POST['ajax']) || (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json')));
+
+function settings_redirect(string $message, string $type = 'error', array $extra = []): void
 {
+    global $isAjax;
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array_merge([
+            'status' => $type === 'success' ? 'success' : 'error',
+            'message' => $message,
+        ], $extra));
+        exit;
+    }
     $_SESSION['settings_flash'] = ['message' => $message, 'type' => $type];
     header('Location: settings.php');
     exit;
@@ -30,12 +41,14 @@ switch ($_POST['action'] ?? '') {
             settings_redirect('The selected language is invalid.');
         }
 
-        $darkMode = isset($_POST['dark_mode']) ? 1 : 0;
-        $compactMode = isset($_POST['compact_mode']) ? 1 : 0;
+        $darkMode = !empty($_POST['dark_mode']) ? 1 : 0;
+        $compactMode = isset($_POST['compact_mode'])
+            ? (in_array((int)$_POST['compact_mode'], [0, 1, 2], true) ? (int)$_POST['compact_mode'] : 0)
+            : (int)($user['compact_mode'] ?? 0);
         $before = [
             'language' => (string)($user['language'] ?? 'en'),
             'dark_mode' => empty($user['dark_mode']) ? 0 : 1,
-            'compact_mode' => empty($user['compact_mode']) ? 0 : 1,
+            'compact_mode' => (int)($user['compact_mode'] ?? 0),
         ];
         $after = [
             'language' => $language,
@@ -43,29 +56,38 @@ switch ($_POST['action'] ?? '') {
             'compact_mode' => $compactMode,
         ];
         $pdo = db();
-        $pdo->beginTransaction();
         try {
+            $pdo->beginTransaction();
             $stmt = $pdo->prepare(
                 'UPDATE users SET language = ?, dark_mode = ?, compact_mode = ? WHERE id = ?'
             );
             $stmt->execute([$language, $darkMode, $compactMode, $accountId]);
-            if ($before !== $after) {
-                AuditLog::record('user.preferences_changed', 'user', (string)$accountId, [
-                    'before' => $before,
-                    'after' => $after,
-                ]);
+            try {
+                if ($before !== $after) {
+                    AuditLog::record('user.preferences_changed', 'user', (string)$accountId, [
+                        'before' => $before,
+                        'after' => $after,
+                    ]);
+                }
+            } catch (Throwable $auditEx) {
+                error_log('AuditLog record failed: ' . $auditEx->getMessage());
             }
             $pdo->commit();
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }
-            throw $e;
+            error_log('Failed to update user preferences: ' . $e->getMessage());
+            settings_redirect('Failed to save preferences: ' . $e->getMessage(), 'error');
         }
         $_SESSION['user']['language'] = $language;
         $_SESSION['user']['dark_mode'] = $darkMode;
         $_SESSION['user']['compact_mode'] = $compactMode;
-        settings_redirect('Settings saved.', 'success');
+        settings_redirect('Settings saved.', 'success', [
+            'language' => $language,
+            'dark_mode' => $darkMode,
+            'compact_mode' => $compactMode,
+        ]);
 
     case 'password':
         $currentPassword = $_POST['current_password'] ?? '';
