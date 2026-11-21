@@ -1,22 +1,139 @@
 
+/* History Controls & Search Bar */
 .hist-controls { 
   display: flex; 
-  gap: 10px; 
+  gap: 12px; 
   align-items: center; 
+  flex-wrap: wrap;
+}
+
+.hist-controls .searchbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card, #fff);
+  border: 1.5px solid var(--line);
+  border-radius: 40px;
+  padding: 6px 12px 6px 18px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.hist-controls .searchbar:focus-within {
+  border-color: var(--blue-800);
+  box-shadow: 0 0 0 3px rgba(39, 38, 196, .12);
+}
+
+.hist-controls .searchbar input {
+  border: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--ink);
+  min-width: 220px;
+  padding: 4px 0;
+  line-height: 1.4;
+}
+
+.hist-controls .searchbar input::placeholder {
+  color: var(--muted);
+  opacity: 0.85;
+}
+
+.hist-controls .searchbar button {
+  background: transparent !important;
+  border: 0 !important;
+  outline: none !important;
+  cursor: pointer;
+  padding: 6px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  border-radius: 50%;
+  transition: color .15s, background-color .15s, transform .15s;
+}
+
+.hist-controls .searchbar button:hover,
+.hist-controls .searchbar button:focus-visible {
+  color: var(--blue-800);
+  background-color: rgba(39, 38, 196, .08);
+  transform: scale(1.08);
+}
+
+.hist-controls .searchbar button svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  stroke-width: 2.2;
+}
+
+.searchbar-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  padding: 4px;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: color .15s, background-color .15s;
+}
+
+.searchbar-clear:hover {
+  color: var(--danger, #e53935);
+  background-color: rgba(229, 57, 53, .08);
 }
 
 .btn-export {
-  padding: 10px 20px; 
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 20px; 
   background: #17b984; 
   color: #fff; 
   border-radius: 30px;
   font-weight: 700; 
+  font-size: 13px;
   text-decoration: none; 
-  transition: transform .15s, background .2s;
+  transition: transform .15s, background .2s, box-shadow .2s;
+  box-shadow: 0 2px 6px rgba(23, 185, 132, .2);
 }
 .btn-export:hover { 
   transform: translateY(-2px); 
   background: #12a273; 
+  box-shadow: 0 4px 10px rgba(23, 185, 132, .3);
+}
+
+/* Dark mode for history search */
+html[data-theme="dark"] .hist-controls .searchbar {
+  background-color: var(--card) !important;
+  border-color: var(--line);
+}
+html[data-theme="dark"] .hist-controls .searchbar:focus-within {
+  border-color: #7b7ef5;
+  box-shadow: 0 0 0 3px rgba(123, 126, 245, .2);
+}
+html[data-theme="dark"] .hist-controls .searchbar input {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: var(--ink) !important;
+}
+html[data-theme="dark"] .hist-controls .searchbar button {
+  color: var(--muted);
+  background: transparent !important;
+}
+html[data-theme="dark"] .hist-controls .searchbar button:hover,
+html[data-theme="dark"] .hist-controls .searchbar button:focus-visible {
+  color: #8b8eff;
+  background-color: rgba(255, 255, 255, .08) !important;
+}
+html[data-theme="dark"] .searchbar-clear:hover {
+  color: #f87171;
+  background-color: rgba(248, 113, 113, .15);
 }
 
 .table-wrap {
@@ -680,19 +797,32 @@
   font-weight: 700;
 }
 
-.data-table.hist details {
-  white-space: normal;
-  min-width: 160px;
-}
-
-.data-table.hist details pre {
-  max-width: 340px;
-  overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-
 @media (max-width: 600px) {
+  .hist-controls {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .hist-controls .searchbar {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .hist-controls .searchbar input {
+    min-width: 0;
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .btn-export {
+    justify-content: center;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+  }
+
   .role-assignment-form {
     min-width: 220px;
     flex-wrap: wrap;

@@ -11,9 +11,16 @@ $appBasePath = htmlspecialchars($appBasePath, ENT_QUOTES, 'UTF-8');
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="ACLC Inventory">
 <script>
-document.documentElement.lang = <?= json_encode(app_language_tag()) ?>;
-document.documentElement.dataset.theme = <?= json_encode(app_theme()) ?>;
-document.documentElement.dataset.compact = <?= json_encode(app_compact_mode() ? '1' : '0') ?>;
+(function() {
+  const localTheme = localStorage.getItem('aclc_theme');
+  const serverTheme = <?= json_encode(app_theme()) ?>;
+  document.documentElement.dataset.theme = localTheme || serverTheme;
+
+  const localCompact = localStorage.getItem('aclc_compact');
+  const serverCompact = <?= json_encode((string)(app_compact_mode() ? '1' : '0')) ?>;
+  document.documentElement.dataset.compact = localCompact !== null ? localCompact : serverCompact;
+  document.documentElement.lang = <?= json_encode(app_language_tag()) ?>;
+})();
 window.APP_I18N = <?= json_encode(app_translations(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) ?>;
 window.appTranslate = (key, values = {}) => {
   let text = window.APP_I18N[key] || key;
@@ -27,5 +34,5 @@ window.appTranslate = (key, values = {}) => {
 <link rel="icon" type="image/png" sizes="192x192" href="<?= $appBasePath ?>/assets/images/pwa-192.png">
 <link rel="apple-touch-icon" href="<?= $appBasePath ?>/assets/images/pwa-192.png">
 <link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/pwa.css?v=35">
-<link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/settings.css?v=22">
+<link rel="stylesheet" href="<?= $appBasePath ?>/assets/css/settings.css?v=27">
 <script defer src="<?= $appBasePath ?>/assets/js/pwa.js?v=10"></script>
