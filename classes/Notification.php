@@ -20,6 +20,23 @@ class Notification
         return $stmt->fetchAll();
     }
 
+    public static function findForUser(int $id, int $userId): ?array
+    {
+        $stmt = db()->prepare(
+            'SELECT * FROM notifications WHERE id = ? AND user_id = ? LIMIT 1'
+        );
+        $stmt->execute([$id, $userId]);
+        return $stmt->fetch() ?: null;
+    }
+
+    public static function markRead(int $id, int $userId): void
+    {
+        $stmt = db()->prepare(
+            'UPDATE notifications SET is_read = 1 WHERE id = ? AND user_id = ?'
+        );
+        $stmt->execute([$id, $userId]);
+    }
+
     public static function unreadCount(int $userId): int
     {
         $stmt = db()->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0');

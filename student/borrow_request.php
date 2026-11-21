@@ -102,7 +102,7 @@ $flash = $_GET['flash'] ?? '';
     <?php if (empty($notifs)): ?>
       <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
     <?php else: foreach ($notifs as $n): ?>
-      <div class="notif-item <?= $n['is_read']?'':'unread' ?>">
+      <a href="actions.php?do=notif_open&id=<?= (int)$n['id'] ?>" class="notif-item <?= $n['is_read']?'':'unread' ?>">
         <span class="ni-type <?= e($n['type']) ?>" aria-hidden="true">
           <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
         </span>
@@ -111,7 +111,7 @@ $flash = $_GET['flash'] ?? '';
           <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
         </div>
         <?php if (!$n['is_read']): ?><span class="notif-unread-dot" aria-hidden="true"></span><?php endif; ?>
-      </div>
+      </a>
     <?php endforeach; endif; ?>
   </section>
   <?php if ($flash): ?><div class="flash"><?= e(t($flash)) ?></div><?php endif; ?>
@@ -153,7 +153,24 @@ $flash = $_GET['flash'] ?? '';
     </div>
   </section>
 </main>
-<script src="../assets/js/student.js?v=23"></script>
-<script src="../assets/js/borrow_request.js?v=3"></script>
+
+<dialog class="item-dialog submit-confirm-dialog" id="requestSubmittedDialog" aria-labelledby="requestSubmittedTitle">
+  <div class="item-dialog-panel submit-confirm-panel">
+    <div class="submit-confirm-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></svg>
+    </div>
+    <h2 id="requestSubmittedTitle"><?= e(t('Borrow Request Submitted!')) ?></h2>
+    <p id="requestSubmittedMessage">
+      <?= e(t('Your borrow request form is complete and is now Pending for Technical Staff to either approve or decline.')) ?>
+    </p>
+    <div class="submit-confirm-actions">
+      <a href="history.php" class="btn-primary" id="viewSubmittedRequestBtn"><?= e(t('View in Borrow History')) ?></a>
+      <button type="button" class="btn-secondary" id="closeSubmittedDialog"><?= e(t('OK')) ?></button>
+    </div>
+  </div>
+</dialog>
+
+<script src="../assets/js/student.js?v=27"></script>
+<script src="../assets/js/borrow_request.js?v=5"></script>
 </body>
 </html>

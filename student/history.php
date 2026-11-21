@@ -26,7 +26,7 @@ $unread = Notification::unreadCount((int)$user['id']);
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= e(t('My Borrow History')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=37">
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=38">
 <link rel="stylesheet" href="../assets/css/history.css?v=31">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
@@ -41,23 +41,6 @@ $unread = Notification::unreadCount((int)$user['id']);
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
       <?php if ($unread): ?><span class="dot"></span><?php endif; ?>
     </button>
-    <div class="notif-panel" id="notifPanel">
-      <div class="notif-head">
-        <strong><?= e(t('Notifications')) ?></strong>
-        <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
-      </div>
-      <?php if (empty($notifs)): ?>
-        <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
-      <?php else: foreach ($notifs as $n): ?>
-        <div class="notif-item <?= $n['is_read']?'':'unread' ?>">
-          <span class="ni-type <?= e($n['type']) ?>"></span>
-          <div>
-            <p><?= e(t_notification($n['message'])) ?></p>
-            <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
-          </div>
-        </div>
-      <?php endforeach; endif; ?>
-    </div>
     <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -118,6 +101,26 @@ $unread = Notification::unreadCount((int)$user['id']);
   </div>
 </header>
 <main class="stud-main">
+  <section class="notif-panel" id="notifPanel" aria-label="<?= e(t('Notifications')) ?>" aria-hidden="true">
+    <div class="notif-head">
+      <strong><?= e(t('Notifications')) ?></strong>
+      <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
+    </div>
+    <?php if (empty($notifs)): ?>
+      <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
+    <?php else: foreach ($notifs as $n): ?>
+      <a href="actions.php?do=notif_open&id=<?= (int)$n['id'] ?>" class="notif-item <?= $n['is_read']?'':'unread' ?>">
+        <span class="ni-type <?= e($n['type']) ?>" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </span>
+        <div class="notif-copy">
+          <p><?= e(t_notification($n['message'])) ?></p>
+          <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
+        </div>
+        <?php if (!$n['is_read']): ?><span class="notif-unread-dot" aria-hidden="true"></span><?php endif; ?>
+      </a>
+    <?php endforeach; endif; ?>
+  </section>
   <?php if (!empty($_GET['flash'])): ?><div class="flash"><?= e(t($_GET['flash'])) ?></div><?php endif; ?>
   <form method="get" class="student-history-search" role="search">
     <label class="student-history-search-label" for="historySearch"><?= e(t('Search borrow history')) ?></label>
@@ -133,11 +136,19 @@ $unread = Notification::unreadCount((int)$user['id']);
       $dt = $r['returned_at'] ?: $r['borrowed_at'] ?: $r['approved_at'] ?: $r['requested_at'];
       $durLabel = BorrowRequest::formatDuration((int)($r['duration_minutes'] ?? 60));
       $st = $r['status'];
+      $basketItems = $r['basket_items'] ?? [];
+      $itemCount = count($basketItems);
+      $headerTitle = $itemCount > 1
+          ? t('Basket') . " ({$itemCount} " . t('items') . '): ' . $r['equipment_name']
+          : $r['equipment_name'];
+      $focusId = (int)($_GET['focus'] ?? 0);
+      $isFocused = $focusId === (int)$r['id'];
+      $shouldOpen = $isFocused || in_array($st, ['pending', 'approved', 'borrowed', 'overdue'], true);
     ?>
-      <details class="student-history-record" <?= in_array($st, ['pending', 'approved', 'borrowed', 'overdue'], true) ? 'open' : '' ?>>
+      <details id="req-<?= (int)$r['id'] ?>" class="student-history-record <?= $isFocused ? 'focus-highlight' : '' ?>" <?= $shouldOpen ? 'open' : '' ?>>
         <summary class="student-history-record-summary">
           <div class="student-history-record-meta">
-            <p><strong><?= e(t('ID')) ?>:</strong> #<?= (int)$r['id'] ?> · <strong><?= e($r['equipment_name']) ?></strong></p>
+            <p><strong><?= e(t('ID')) ?>:</strong> #<?= (int)$r['id'] ?> · <strong><?= e($headerTitle) ?></strong></p>
             <time datetime="<?= e(date(DATE_ATOM, strtotime($dt))) ?>">
               <strong><?= e(t('Date & Time')) ?>:</strong> <?= e(date('M d, Y h:i A', strtotime($dt))) ?>
             </time>
@@ -156,9 +167,17 @@ $unread = Notification::unreadCount((int)$user['id']);
         <div class="student-history-record-details">
           <div class="student-history-record-main">
             <div class="student-history-record-fields">
-              <div class="student-history-record-field">
-                <span><?= e(t('Equipment')) ?></span>
-                <strong><?= e($r['equipment_name']) ?> (<?= e($r['serial_number'] ?? '') ?>)</strong>
+              <div class="student-history-record-field basket-items-field">
+                <span><?= e($itemCount > 1 ? t('Items in Basket') : t('Equipment')) ?></span>
+                <?php if ($itemCount > 1): ?>
+                  <ul class="basket-item-list">
+                    <?php foreach ($basketItems as $bi): ?>
+                      <li><strong><?= e($bi['name']) ?></strong> <small>(<?= e($bi['serial_number']) ?>)</small></li>
+                    <?php endforeach; ?>
+                  </ul>
+                <?php else: ?>
+                  <strong><?= e($r['equipment_name']) ?> (<?= e($r['serial_number'] ?? '') ?>)</strong>
+                <?php endif; ?>
               </div>
               <div class="student-history-record-field">
                 <span><?= e(t('Duration')) ?></span>

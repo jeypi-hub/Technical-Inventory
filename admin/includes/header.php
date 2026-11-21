@@ -11,7 +11,7 @@ $__unread = $__unread ?? Notification::unreadCount((int)$user['id']);
   <?php if (empty($__notifs)): ?>
     <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
   <?php else: foreach ($__notifs as $n): ?>
-    <div class="notif-item <?= $n['is_read'] ? '' : 'unread' ?>">
+    <a href="actions.php?do=notif_open&id=<?= (int)$n['id'] ?>" class="notif-item <?= $n['is_read'] ? '' : 'unread' ?>">
       <span class="ni-type <?= e($n['type']) ?>" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
       </span>
@@ -20,6 +20,6 @@ $__unread = $__unread ?? Notification::unreadCount((int)$user['id']);
         <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
       </div>
       <?php if (!$n['is_read']): ?><span class="notif-unread-dot" aria-hidden="true"></span><?php endif; ?>
-    </div>
+    </a>
   <?php endforeach; endif; ?>
 </section>

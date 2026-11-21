@@ -99,6 +99,22 @@
 }
 .btn-scan-action:hover { transform: scale(1.05); }
 
+.focus-highlight {
+  outline: 3px solid var(--blue-800);
+  box-shadow: 0 0 0 6px rgba(39, 38, 196, .16);
+}
+.basket-item-list {
+  margin: 4px 0 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.basket-item-list li small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .student-history-records {
   display: grid;
   gap: 16px;

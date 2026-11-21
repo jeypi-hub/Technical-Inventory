@@ -66,10 +66,13 @@ $pageTitle    = 'Home';
         <div class="empty"><?= e(t('No pending requests waiting for approval.')) ?></div>
       <?php else: ?>
         <div class="active-list">
-          <?php foreach ($pendingReqs as $p):
+          <?php
+          $focusId = (int)($_GET['focus'] ?? 0);
+          foreach ($pendingReqs as $p):
             $durLabel = BorrowRequest::formatDuration((int)($p['duration_minutes'] ?? 60));
+            $isFocused = $focusId === (int)$p['id'];
           ?>
-          <div class="active-row pending">
+          <div id="req-<?= (int)$p['id'] ?>" class="active-row pending <?= $isFocused ? 'focus-highlight' : '' ?>">
             <div>
               <strong><?= e($p['equipment_name']) ?></strong>
               <small>(<?= e(t('SN:')) ?> <?= e($p['serial_number']) ?>)</small>
@@ -101,9 +104,12 @@ $pageTitle    = 'Home';
         </div>
       </div>
       <div class="active-list">
-        <?php foreach ($awaitingScan as $aw):
+        <?php
+        $focusId = (int)($_GET['focus'] ?? 0);
+        foreach ($awaitingScan as $aw):
           $durLabel = BorrowRequest::formatDuration((int)($aw['duration_minutes'] ?? 60));
           $pickupExpiresTs = strtotime($aw['approved_at'] ?? 'now') + BorrowRequest::PICKUP_EXPIRY_SECONDS;
+          $isFocused = $focusId === (int)$aw['id'];
           $qrPayload = [
               'id' => (int)$aw['id'],
               'qr_token' => (string)($aw['qr_token'] ?? ''),
@@ -116,7 +122,7 @@ $pageTitle    = 'Home';
               'pickup_expires_at' => date('c', $pickupExpiresTs),
           ];
         ?>
-        <div class="active-row awaiting-qr-row">
+        <div id="req-<?= (int)$aw['id'] ?>" class="active-row awaiting-qr-row <?= $isFocused ? 'focus-highlight' : '' ?>">
           <div>
             <strong><?= e($aw['equipment_name']) ?></strong>
             <small>(<?= e(t('SN:')) ?> <?= e($aw['serial_number']) ?>)</small>
