@@ -1,4 +1,4 @@
-// Lightweight canvas bar chart — no external libs.
+
 (function () {
   const canvas = document.getElementById('chart');
   if (!canvas) return;
@@ -39,10 +39,8 @@
     const bh = (b / maxVal) * plotH;
     const rh = (r / maxVal) * plotH;
 
-    // borrowed bar
     ctx.fillStyle = '#2726c4';
     ctx.fillRect(cx - barW - 2, h - padY - bh, barW, bh);
-    // returned bar
     ctx.fillStyle = '#16a34a';
     ctx.fillRect(cx + 2, h - padY - rh, barW, rh);
 
