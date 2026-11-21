@@ -55,7 +55,7 @@ $pageTitle = 'Active Checkouts';
               'pickup_expires_at' => date('c', $pickupExpiresTs),
           ];
         ?>
-          <div class="active-row awaiting-qr-row">
+          <div id="req-<?= (int)$aw['id'] ?>" class="active-row awaiting-qr-row <?= ((int)($_GET['focus'] ?? 0) === (int)$aw['id']) ? 'focus-highlight' : '' ?>">
             <div>
               <strong><?= e($aw['equipment_name']) ?></strong>
               <small>(<?= e(t('SN:')) ?> <?= e($aw['serial_number']) ?>)</small>
@@ -97,7 +97,7 @@ $pageTitle = 'Active Checkouts';
           $dueTs = !empty($a['due_at']) ? strtotime($a['due_at']) : (strtotime($a['borrowed_at'] ?? $a['approved_at'] ?? $a['requested_at']) + ((int)($a['duration_minutes'] ?? 60) * 60));
           $isOverdue = $a['status'] === 'overdue' || (time() > $dueTs);
         ?>
-          <div class="active-row <?= $isOverdue ? 'overdue-row' : '' ?>">
+          <div id="req-<?= (int)$a['id'] ?>" class="active-row <?= $isOverdue ? 'overdue-row' : '' ?> <?= ((int)($_GET['focus'] ?? 0) === (int)$a['id']) ? 'focus-highlight' : '' ?>">
             <div>
               <strong><?= e($a['equipment_name']) ?></strong>
               <small>(<?= e(t('SN:')) ?> <?= e($a['serial_number']) ?>)</small>

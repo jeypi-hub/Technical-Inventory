@@ -106,9 +106,22 @@ try {
 
   const pageUrl = new URL(window.location.href);
   if (pageUrl.searchParams.has('submitted')) {
+    const submittedReqId = pageUrl.searchParams.get('req_id') || '';
     localStorage.removeItem(cartStorageKey);
     pageUrl.searchParams.delete('submitted');
+    pageUrl.searchParams.delete('req_id');
     window.history.replaceState(null, '', pageUrl);
+
+    const submittedDialog = document.getElementById('requestSubmittedDialog');
+    const viewBtn = document.getElementById('viewSubmittedRequestBtn');
+    const closeBtn = document.getElementById('closeSubmittedDialog');
+    if (viewBtn && submittedReqId) {
+      viewBtn.href = `active_borrows.php?focus=${encodeURIComponent(submittedReqId)}#req-${encodeURIComponent(submittedReqId)}`;
+    }
+    if (submittedDialog) {
+      window.setTimeout(() => submittedDialog.showModal(), 80);
+      closeBtn?.addEventListener('click', () => submittedDialog.close());
+    }
   } else {
     const savedItems = JSON.parse(localStorage.getItem(cartStorageKey) || '[]');
     if (!Array.isArray(savedItems) || !savedItems.every(isValidCartItem)) {

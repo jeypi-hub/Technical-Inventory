@@ -174,7 +174,14 @@ html, body {
   margin: 4px 8px;
   padding: 10px 12px;
   border-radius: 10px;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
   transition: background-color .15s ease;
+}
+.focus-highlight {
+  outline: 3px solid #2726c4;
+  box-shadow: 0 0 0 6px rgba(39, 38, 196, .16);
 }
 .notif-item:hover { background: #f0f2f5; }
 .notif-item.unread { background: #e7f3ff; }

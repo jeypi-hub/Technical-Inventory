@@ -61,6 +61,64 @@ class BorrowRequest
     }
 
     /**
+     * Enriches borrow_requests rows with all equipment units in their basket (reserved_equipment_ids).
+     */
+    public static function enrichRows(array $rows): array
+    {
+        if (empty($rows)) {
+            return $rows;
+        }
+        $allIds = [];
+        foreach ($rows as $r) {
+            foreach (self::parseReservedIds($r['reserved_equipment_ids'] ?? null, (int)($r['equipment_id'] ?? 0)) as $eid) {
+                $allIds[$eid] = $eid;
+            }
+        }
+        $equipMap = [];
+        if (!empty($allIds)) {
+            $placeholders = implode(',', array_fill(0, count($allIds), '?'));
+            $stmt = db()->prepare("SELECT id, name, serial_number, status FROM equipment WHERE id IN ($placeholders)");
+            $stmt->execute(array_values($allIds));
+            foreach ($stmt->fetchAll() as $eq) {
+                $equipMap[(int)$eq['id']] = $eq;
+            }
+        }
+
+        foreach ($rows as &$r) {
+            $ids = self::parseReservedIds($r['reserved_equipment_ids'] ?? null, (int)($r['equipment_id'] ?? 0));
+            $basketItems = [];
+            $namesByCount = [];
+            $serials = [];
+            foreach ($ids as $eid) {
+                if (isset($equipMap[$eid])) {
+                    $eq = $equipMap[$eid];
+                    $basketItems[] = $eq;
+                    $namesByCount[$eq['name']] = ($namesByCount[$eq['name']] ?? 0) + 1;
+                    $serials[] = $eq['serial_number'];
+                }
+            }
+            if (!empty($basketItems)) {
+                $r['basket_items'] = $basketItems;
+                $nameParts = [];
+                foreach ($namesByCount as $n => $cnt) {
+                    $nameParts[] = $cnt > 1 ? "{$n} × {$cnt}" : $n;
+                }
+                $r['equipment_name'] = implode(', ', $nameParts);
+                $r['serial_number'] = implode(', ', $serials);
+                $r['quantity'] = count($basketItems);
+            } else {
+                $r['basket_items'] = [[
+                    'id' => (int)($r['equipment_id'] ?? 0),
+                    'name' => (string)($r['equipment_name'] ?? 'Equipment'),
+                    'serial_number' => (string)($r['serial_number'] ?? ''),
+                ]];
+            }
+        }
+        unset($r);
+        return $rows;
+    }
+
+    /**
      * Automatically escalates active borrowed requests:
      * 1. Borrowed > selected duration (due_at < NOW()) -> 'overdue'
      * 2. Borrowed or Overdue > 24 hours since borrowed_at -> 'lost'
@@ -288,9 +346,32 @@ class BorrowRequest
         string $teacher,
         int $durationMinutes = 60
     ): int {
-        $quantity = max(1, $quantity);
+        return self::createBatch(
+            $userId,
+            [['equipment_id' => $equipmentId, 'quantity' => max(1, $quantity)]],
+            $purpose,
+            $classroom,
+            $teacher,
+            $durationMinutes
+        );
+    }
+
+    /**
+     * Creates a single Borrow Basket / Cart request containing one or more equipment items.
+     */
+    public static function createBatch(
+        int $userId,
+        array $requestedItems,
+        string $purpose,
+        string $classroom,
+        string $teacher,
+        int $durationMinutes = 60
+    ): int {
         if (!in_array($durationMinutes, self::VALID_DURATIONS, true)) {
             $durationMinutes = 60;
+        }
+        if (empty($requestedItems)) {
+            throw new RuntimeException('No items provided for borrow request.');
         }
 
         $pdo = db();
@@ -299,13 +380,27 @@ class BorrowRequest
             $pdo->beginTransaction();
         }
         try {
-            $reservedIds = Equipment::reserveUnits($equipmentId, $quantity);
-            if (!$reservedIds) {
-                throw new RuntimeException('Insufficient available equipment units to reserve.');
+            $allReservedIds = [];
+            $itemLabels = [];
+            foreach ($requestedItems as $item) {
+                $eqId = (int)($item['equipment_id'] ?? 0);
+                $qty  = max(1, (int)($item['quantity'] ?? 1));
+                $reservedIds = Equipment::reserveUnits($eqId, $qty);
+                if (!$reservedIds) {
+                    throw new RuntimeException('Insufficient available equipment units to reserve.');
+                }
+                foreach ($reservedIds as $rid) {
+                    $allReservedIds[] = (int)$rid;
+                }
+                $eqRow = Equipment::find((int)$reservedIds[0]);
+                $eqName = $eqRow['name'] ?? 'Equipment';
+                $itemLabels[] = $qty > 1 ? "{$eqName} × {$qty}" : $eqName;
             }
-            $primaryEquipmentId = (int)$reservedIds[0];
-            $eqRow = Equipment::find($primaryEquipmentId);
-            $equipmentName = $eqRow['name'] ?? 'item(s)';
+
+            $primaryEquipmentId = (int)$allReservedIds[0];
+            $totalQuantity = count($allReservedIds);
+            $equipmentSummary = implode(', ', $itemLabels);
+
             $stmt = $pdo->prepare(
                 'INSERT INTO borrow_requests
                  (user_id, equipment_id, reserved_equipment_ids, purpose, classroom, teacher, quantity, duration_minutes, status)
@@ -314,18 +409,19 @@ class BorrowRequest
             $stmt->execute([
                 $userId,
                 $primaryEquipmentId,
-                json_encode($reservedIds),
+                json_encode($allReservedIds),
                 $purpose,
                 $classroom,
                 $teacher,
-                $quantity,
+                $totalQuantity,
                 $durationMinutes,
             ]);
             $reqId = (int) $pdo->lastInsertId();
             AuditLog::record('borrow.requested', 'borrow_request', (string)$reqId, [
                 'equipment_id' => $primaryEquipmentId,
-                'reserved_equipment_ids' => $reservedIds,
-                'quantity' => $quantity,
+                'reserved_equipment_ids' => $allReservedIds,
+                'items' => $equipmentSummary,
+                'quantity' => $totalQuantity,
                 'duration_minutes' => $durationMinutes,
             ]);
             if ($ownsTransaction) {
@@ -342,12 +438,12 @@ class BorrowRequest
         Notification::push(
             $userId,
             'request',
-            "Borrow request #{$reqId} for {$quantity} {$equipmentName} ({$durLabel}) submitted — item status is now Pending and waiting for Technical Staff approval.",
+            "Borrow request #{$reqId} for {$totalQuantity} item(s) ({$equipmentSummary} · {$durLabel}) submitted — status is now Pending Technical Staff approval.",
             $reqId
         );
         self::notifyManagement(
             'request',
-            "New borrow request #{$reqId} for {$quantity} {$equipmentName} ({$durLabel}) is pending approval.",
+            "New borrow request #{$reqId} for {$totalQuantity} item(s) ({$equipmentSummary} · {$durLabel}) is pending approval.",
             $reqId
         );
         return $reqId;
@@ -390,7 +486,7 @@ class BorrowRequest
         $sql .= " ORDER BY br.requested_at DESC";
         $stmt = db()->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        return self::enrichRows($stmt->fetchAll());
     }
 
     public static function forUser(int $userId): array
@@ -404,7 +500,22 @@ class BorrowRequest
              ORDER BY br.requested_at DESC"
         );
         $stmt->execute([$userId]);
-        return $stmt->fetchAll();
+        return self::enrichRows($stmt->fetchAll());
+    }
+
+    public static function activeForUser(int $userId): array
+    {
+        self::syncOverdueAndLost();
+        $stmt = db()->prepare(
+            "SELECT br.*, e.name AS equipment_name, e.serial_number
+             FROM borrow_requests br
+             JOIN equipment e ON e.id = br.equipment_id
+             WHERE br.user_id = ?
+               AND br.status IN ('pending', 'approved', 'borrowed', 'overdue')
+             ORDER BY br.requested_at DESC"
+        );
+        $stmt->execute([$userId]);
+        return self::enrichRows($stmt->fetchAll());
     }
 
     public static function countForUser(int $userId, string $search = ''): int
@@ -439,7 +550,7 @@ class BorrowRequest
         $stmt->bindValue(':limit', max(1, $limit), PDO::PARAM_INT);
         $stmt->bindValue(':offset', max(0, $offset), PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll();
+        return self::enrichRows($stmt->fetchAll());
     }
 
     private static function userHistoryFilters(int $userId, string $search): array
@@ -470,7 +581,7 @@ class BorrowRequest
              ORDER BY br.requested_at DESC"
         );
         $stmt->execute($statuses);
-        return $stmt->fetchAll();
+        return self::enrichRows($stmt->fetchAll());
     }
 
     /**
@@ -821,7 +932,11 @@ class BorrowRequest
              WHERE br.id = ?"
         );
         $stmt->execute([$id]);
-        return $stmt->fetch() ?: null;
+        $row = $stmt->fetch();
+        if (!$row) {
+            return null;
+        }
+        return self::enrichRows([$row])[0];
     }
 
     private static function findForUpdate(PDO $pdo, int $id): ?array
@@ -833,7 +948,11 @@ class BorrowRequest
              WHERE br.id = ? FOR UPDATE'
         );
         $stmt->execute([$id]);
-        return $stmt->fetch() ?: null;
+        $row = $stmt->fetch();
+        if (!$row) {
+            return null;
+        }
+        return self::enrichRows([$row])[0];
     }
 
     public static function monthlyActivity(int $year): array

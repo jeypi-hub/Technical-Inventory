@@ -56,26 +56,19 @@ switch ($do) {
             }
         }
 
-        $pdo = db();
-        $pdo->beginTransaction();
         try {
-            foreach ($requestedItems as $item) {
-                BorrowRequest::create(
-                    (int)$user['id'],
-                    $item['equipment_id'],
-                    $item['quantity'],
-                    $purpose,
-                    $classroom,
-                    $teacher,
-                    $durationMinutes
-                );
-            }
-            $pdo->commit();
+            $newReqId = BorrowRequest::createBatch(
+                (int)$user['id'],
+                array_values($requestedItems),
+                $purpose,
+                $classroom,
+                $teacher,
+                $durationMinutes
+            );
         } catch (Throwable $e) {
-            if ($pdo->inTransaction()) $pdo->rollBack();
             header('Location: borrow_request.php?flash=' . urlencode(t('Could not reserve items: insufficient available stock'))); exit;
         }
-        header('Location: borrow_request.php?submitted=1'); exit;
+        header('Location: borrow_request.php?submitted=1&req_id=' . (int)$newReqId); exit;
 
     case 'request':
         $equipId    = (int)($_POST['equipment_id'] ?? 0);
@@ -112,7 +105,8 @@ switch ($do) {
             json_out($result, $result['ok'] ? 200 : 422);
         }
         if ($result['ok']) {
-            header('Location: history.php');
+            $reqId = (int)($result['request_id'] ?? 0);
+            header('Location: active_borrows.php' . ($reqId > 0 ? '?focus=' . $reqId . '#req-' . $reqId : ''));
         } else {
             header('Location: student_dashboard.php?flash=' . urlencode($result['message']));
         }
@@ -121,6 +115,28 @@ switch ($do) {
     case 'notif_read':
         Notification::markAllRead((int)$user['id']);
         header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? 'student_dashboard.php')); exit;
+
+    case 'notif_open':
+        $notifId = (int)($_GET['id'] ?? 0);
+        $notif = Notification::findForUser($notifId, (int)$user['id']);
+        if ($notif) {
+            Notification::markRead($notifId, (int)$user['id']);
+            $relatedId = (int)($notif['related_id'] ?? 0);
+            if ($relatedId <= 0 && preg_match('/#(\d+)/', (string)$notif['message'], $m)) {
+                $relatedId = (int)$m[1];
+            }
+            if ($relatedId > 0) {
+                $req = BorrowRequest::find($relatedId);
+                if ($req && in_array($req['status'], ['pending', 'approved', 'borrowed', 'overdue'], true)) {
+                    header('Location: active_borrows.php?focus=' . $relatedId . '#req-' . $relatedId);
+                    exit;
+                }
+                header('Location: history.php?q=' . urlencode('#' . $relatedId) . '&focus=' . $relatedId . '#req-' . $relatedId);
+                exit;
+            }
+        }
+        header('Location: history.php');
+        exit;
 
     case 'cancel':
         $reqId = (int)($_GET['id'] ?? $_POST['id'] ?? 0);

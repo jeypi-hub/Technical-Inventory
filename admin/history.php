@@ -60,7 +60,7 @@ $pageTitle = 'History';
             $durLabel = BorrowRequest::formatDuration((int)($r['duration_minutes'] ?? 60));
             $st = $r['status'];
           ?>
-            <tr>
+            <tr id="req-<?= (int)$r['id'] ?>" class="<?= ((int)($_GET['focus'] ?? 0) === (int)$r['id']) ? 'focus-highlight' : '' ?>">
               <td>#<?= (int)$r['id'] ?></td>
               <td><?= e(date('M d, Y h:i A', strtotime($dt))) ?></td>
               <td>
@@ -95,7 +95,7 @@ $pageTitle = 'History';
             </tr>
           <?php endforeach; ?>
           <?php if (empty($rows)): ?>
-            <tr><td colspan="11" class="empty"><?= e(t('No history yet.')) ?></td></tr>
+            <tr id="req-<?= (int)$r['id'] ?>" class="<?= ((int)($_GET['focus'] ?? 0) === (int)$r['id']) ? 'focus-highlight' : '' ?>"><td colspan="11" class="empty"><?= e(t('No history yet.')) ?></td></tr>
           <?php endif; ?>
           </tbody>
         </table>

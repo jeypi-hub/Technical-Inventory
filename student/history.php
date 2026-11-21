@@ -25,99 +25,34 @@ $unread = Notification::unreadCount((int)$user['id']);
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title><?= e(t('My Borrow History')) ?> — ACLC</title>
-<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=37">
-<link rel="stylesheet" href="../assets/css/history.css?v=31">
+<title><?= e(t('Borrow History')) ?> — ACLC</title>
+<link rel="stylesheet" href="../assets/css/student_dashboard.css?v=40">
+<link rel="stylesheet" href="../assets/css/history.css?v=33">
 <?php include __DIR__ . '/../includes/pwa_head.php'; ?>
 </head>
-<body data-borrow-cart-key="<?= e('aclc-borrow-cart-' . (int)$user['id']) ?>">
-<header class="stud-topbar">
-  <div class="stud-brand">
-    <img src="../assets/images/aclc_logo.png" alt="ACLC" class="brand-logo">
-    <div><strong>ACLC COLLEGE</strong><span>MANDAUE CITY</span></div>
-  </div>
-  <div class="notif student-top-notif">
-    <button type="button" class="notif-btn" onclick="toggleNotif()" aria-label="<?= e(t('Notifications')) ?>" aria-expanded="false" title="<?= e(t('Notifications')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-      <?php if ($unread): ?><span class="dot"></span><?php endif; ?>
-    </button>
-    <div class="notif-panel" id="notifPanel">
-      <div class="notif-head">
-        <strong><?= e(t('Notifications')) ?></strong>
-        <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
-      </div>
-      <?php if (empty($notifs)): ?>
-        <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
-      <?php else: foreach ($notifs as $n): ?>
-        <div class="notif-item <?= $n['is_read']?'':'unread' ?>">
-          <span class="ni-type <?= e($n['type']) ?>"></span>
-          <div>
-            <p><?= e(t_notification($n['message'])) ?></p>
-            <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
-          </div>
-        </div>
-      <?php endforeach; endif; ?>
-    </div>
-    <div class="profile" onclick="toggleProfile()" role="button" tabindex="0" aria-expanded="false" aria-label="<?= e(t('Account menu')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-        <circle cx="12" cy="7" r="4"></circle>
-      </svg>
-      <div class="profile-info">
-        <strong><?= e(t('USER')) ?> <?= e($user['name']) ?></strong>
-        <span><?= e($user['course']) ?></span>
-      </div>
-      <div class="profile-panel" id="profilePanel">
-        <div class="pp-head">
-          <strong><?= e($user['name']) ?></strong>
-          <span><?= e($user['course']) ?> · <?= e(t($roleLabel)) ?></span>
-        </div>
-        <a href="../profile.php" class="pp-item">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M5 21a7 7 0 0 1 14 0"></path></svg>
-          <?= e(t('Profile')) ?>
-        </a>
-        <a href="../settings.php" class="pp-item">
-          <span aria-hidden="true">⚙</span>
-          <?= e(t('Settings')) ?>
-        </a>
-        <a href="../auth/student_logout.php" class="pp-logout">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          <?= e(t('Logout')) ?>
-        </a>
-      </div>
-    </div>
-  </div>
-  <div class="stud-right">
-    <a href="student_dashboard.php" class="mobile-nav-link home-nav-link" aria-label="<?= e(t('Home')) ?>" title="<?= e(t('Home')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="m3 10 9-7 9 7"></path>
-        <path d="M5 9v12h14V9M9 21v-7h6v7"></path>
-      </svg>
-      <span class="nav-label"><?= e(t('Home')) ?></span>
-    </a>
-    <a href="borrow_request.php" class="cart-btn" aria-label="<?= e(t('Open borrow request')) ?>" title="<?= e(t('Borrow Request')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M7 3h8l4 4v14H7z"></path>
-        <path d="M15 3v5h5M10 13h6M10 17h6"></path>
-        <path d="M3 7v14h4"></path>
-      </svg>
-    </a>
-    <a href="history.php" class="mobile-nav-link" aria-label="<?= e(t('My Borrow History')) ?>" aria-current="page" title="<?= e(t('My Borrow History')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="10"></circle>
-        <polyline points="12 6 12 12 16 14"></polyline>
-      </svg>
-      <span class="nav-label"><?= e(t('My Borrow History')) ?></span>
-    </a>
-    <a href="student_dashboard.php?open=scanner" class="scanner-btn" aria-label="<?= e(t('Scan QR code')) ?>" title="<?= e(t('Scan QR code')) ?>">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 8V4h4M16 4h4v4M20 16v4h-4M8 20H4v-4"></path>
-        <path d="M8 8h3v3H8zM15 8v3M15 15h1M19 15v4M8 15h3v3H8z"></path>
-      </svg>
-    </a>
-  </div>
-</header>
+<body class="has-student-nav" data-borrow-cart-key="<?= e('aclc-borrow-cart-' . (int)$user['id']) ?>">
+<?php include __DIR__ . '/includes/topbar.php'; ?>
 <main class="stud-main">
+  <section class="notif-panel" id="notifPanel" aria-label="<?= e(t('Notifications')) ?>" aria-hidden="true">
+    <div class="notif-head">
+      <strong><?= e(t('Notifications')) ?></strong>
+      <a href="actions.php?do=notif_read" class="mark-read"><?= e(t('Mark all read')) ?></a>
+    </div>
+    <?php if (empty($notifs)): ?>
+      <div class="notif-empty"><?= e(t('No notifications yet.')) ?></div>
+    <?php else: foreach ($notifs as $n): ?>
+      <a href="actions.php?do=notif_open&id=<?= (int)$n['id'] ?>" class="notif-item <?= $n['is_read']?'':'unread' ?>">
+        <span class="ni-type <?= e($n['type']) ?>" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+        </span>
+        <div class="notif-copy">
+          <p><?= e(t_notification($n['message'])) ?></p>
+          <small><?= e(date('M d, Y h:i A', strtotime($n['created_at']))) ?></small>
+        </div>
+        <?php if (!$n['is_read']): ?><span class="notif-unread-dot" aria-hidden="true"></span><?php endif; ?>
+      </a>
+    <?php endforeach; endif; ?>
+  </section>
   <?php if (!empty($_GET['flash'])): ?><div class="flash"><?= e(t($_GET['flash'])) ?></div><?php endif; ?>
   <form method="get" class="student-history-search" role="search">
     <label class="student-history-search-label" for="historySearch"><?= e(t('Search borrow history')) ?></label>
@@ -133,11 +68,19 @@ $unread = Notification::unreadCount((int)$user['id']);
       $dt = $r['returned_at'] ?: $r['borrowed_at'] ?: $r['approved_at'] ?: $r['requested_at'];
       $durLabel = BorrowRequest::formatDuration((int)($r['duration_minutes'] ?? 60));
       $st = $r['status'];
+      $basketItems = $r['basket_items'] ?? [];
+      $itemCount = count($basketItems);
+      $headerTitle = $itemCount > 1
+          ? t('Basket') . " ({$itemCount} " . t('items') . '): ' . $r['equipment_name']
+          : $r['equipment_name'];
+      $focusId = (int)($_GET['focus'] ?? 0);
+      $isFocused = $focusId === (int)$r['id'];
+      $shouldOpen = $isFocused || in_array($st, ['pending', 'approved', 'borrowed', 'overdue'], true);
     ?>
-      <details class="student-history-record" <?= in_array($st, ['pending', 'approved', 'borrowed', 'overdue'], true) ? 'open' : '' ?>>
+      <details id="req-<?= (int)$r['id'] ?>" class="student-history-record <?= $isFocused ? 'focus-highlight' : '' ?>" <?= $shouldOpen ? 'open' : '' ?>>
         <summary class="student-history-record-summary">
           <div class="student-history-record-meta">
-            <p><strong><?= e(t('ID')) ?>:</strong> #<?= (int)$r['id'] ?> · <strong><?= e($r['equipment_name']) ?></strong></p>
+            <p><strong><?= e(t('ID')) ?>:</strong> #<?= (int)$r['id'] ?> · <strong><?= e($headerTitle) ?></strong></p>
             <time datetime="<?= e(date(DATE_ATOM, strtotime($dt))) ?>">
               <strong><?= e(t('Date & Time')) ?>:</strong> <?= e(date('M d, Y h:i A', strtotime($dt))) ?>
             </time>
@@ -156,9 +99,17 @@ $unread = Notification::unreadCount((int)$user['id']);
         <div class="student-history-record-details">
           <div class="student-history-record-main">
             <div class="student-history-record-fields">
-              <div class="student-history-record-field">
-                <span><?= e(t('Equipment')) ?></span>
-                <strong><?= e($r['equipment_name']) ?> (<?= e($r['serial_number'] ?? '') ?>)</strong>
+              <div class="student-history-record-field basket-items-field">
+                <span><?= e($itemCount > 1 ? t('Items in Basket') : t('Equipment')) ?></span>
+                <?php if ($itemCount > 1): ?>
+                  <ul class="basket-item-list">
+                    <?php foreach ($basketItems as $bi): ?>
+                      <li><strong><?= e($bi['name']) ?></strong> <small>(<?= e($bi['serial_number']) ?>)</small></li>
+                    <?php endforeach; ?>
+                  </ul>
+                <?php else: ?>
+                  <strong><?= e($r['equipment_name']) ?> (<?= e($r['serial_number'] ?? '') ?>)</strong>
+                <?php endif; ?>
               </div>
               <div class="student-history-record-field">
                 <span><?= e(t('Duration')) ?></span>

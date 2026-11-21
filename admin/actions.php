@@ -101,6 +101,34 @@ switch ($do) {
         Notification::markAllRead((int)$user['id']);
         header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? 'admin_dashboard.php')); exit;
 
+    case 'notif_open':
+        $notifId = (int)($_GET['id'] ?? 0);
+        $notif = Notification::findForUser($notifId, (int)$user['id']);
+        if ($notif) {
+            Notification::markRead($notifId, (int)$user['id']);
+            $relatedId = (int)($notif['related_id'] ?? 0);
+            if ($relatedId <= 0 && preg_match('/#(\d+)/', (string)$notif['message'], $m)) {
+                $relatedId = (int)$m[1];
+            }
+            if ($relatedId > 0) {
+                $req = BorrowRequest::find($relatedId);
+                if ($req) {
+                    if (in_array($req['status'], ['pending', 'approved'], true)) {
+                        header('Location: admin_dashboard.php?focus=' . $relatedId . '#req-' . $relatedId);
+                        exit;
+                    }
+                    if (in_array($req['status'], ['borrowed', 'overdue'], true)) {
+                        header('Location: active_checkouts.php?focus=' . $relatedId . '#req-' . $relatedId);
+                        exit;
+                    }
+                }
+                header('Location: history.php?q=' . urlencode((string)$relatedId) . '&focus=' . $relatedId . '#req-' . $relatedId);
+                exit;
+            }
+        }
+        header('Location: admin_dashboard.php');
+        exit;
+
     case 'export_history':
         $rows = BorrowRequest::history();
         header('Content-Type: application/vnd.ms-excel; charset=utf-8');
